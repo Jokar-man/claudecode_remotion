@@ -16,8 +16,8 @@ import React from "react";
 import {
   AbsoluteFill,
   Img,
+  OffthreadVideo,
   Sequence,
-  Video,
   interpolate,
   staticFile,
   useCurrentFrame,
@@ -50,12 +50,17 @@ const C = {
 };
 
 // ─── Scene Boundaries (frames) ────────────────────────────────────────────────
+// Scene 2 Slide A : 240 frames (= gen/city at 8.0 s — plays once, no loop)
+// Scene 2 Slide B : 150 frames (= collaborate at 5.0 s — plays once, no loop)
+// Scene 3 Mass    : 225 frames (dbfmass is 18.6 s — no loop risk)
+// Scene 3 Plot    : 200 frames (dbfplot is 6.8 s — stays just under loop point)
+// Scene 5         : 1795 frames distributed over 4 ref-video clips × ~449 f
 const S = {
   intro:    { start: 0,    end: 240  },
-  build:    { start: 240,  end: 840  },
-  partners: { start: 840,  end: 1290 },
-  dubai:    { start: 1290, end: 1890 },
-  deepdive: { start: 1890, end: 3450 },
+  build:    { start: 240,  end: 630  },   // 240 + 150 = 390
+  partners: { start: 630,  end: 1055 },   // 225 + 200 = 425
+  dubai:    { start: 1055, end: 1655 },   // 600
+  deepdive: { start: 1655, end: 3450 },   // 1795
   outro:    { start: 3450, end: 3600 },
 };
 
@@ -127,20 +132,20 @@ const PortraitBG: React.FC<{
 }> = ({ src, overlayOpacity = 0.45, startFrom = 0 }) => (
   <AbsoluteFill style={{ overflow: "hidden", background: C.black }}>
     {/* Single centered video — no crop, black letterbox on sides */}
-    <Video
-      src={src}
-      startFrom={startFrom}
-      loop
-      muted
-      style={{
-        position: "absolute",
-        top: 0,
-        left: "50%",
-        transform: "translateX(-50%)",
-        height: "100%",
-        width: "auto",
-      }}
-    />
+    <Sequence from={-startFrom}>
+      <OffthreadVideo
+        src={src}
+        muted
+        style={{
+          position: "absolute",
+          top: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          height: "100%",
+          width: "auto",
+        }}
+      />
+    </Sequence>
     {/* Side vignettes to soften the black edges */}
     <AbsoluteFill style={{ background: "linear-gradient(to right, rgba(0,0,0,0.6) 0%, transparent 12%, transparent 88%, rgba(0,0,0,0.6) 100%)", pointerEvents: "none" }} />
     {/* Content overlay */}
@@ -157,7 +162,7 @@ const PortraitPanel: React.FC<{
   <div style={{ position: "absolute", left, top: 0, width, height: 1080, overflow: "hidden", background: C.black }}>
     {/* Single centered video — no crop, black letterbox on sides */}
     <div style={{ position: "absolute", inset: 0, display: "flex", justifyContent: "center" }}>
-      <Video src={src} loop muted style={{ height: "100%", width: "auto" }} />
+      <OffthreadVideo src={src} muted style={{ height: "100%", width: "auto" }} />
     </div>
   </div>
 );
@@ -167,10 +172,11 @@ const LandscapeBG: React.FC<{
   src: string;
   startFrom?: number;
   overlayOpacity?: number;
-  loop?: boolean;
-}> = ({ src, startFrom = 0, overlayOpacity = 0.45, loop = false }) => (
+}> = ({ src, startFrom = 0, overlayOpacity = 0.45 }) => (
   <AbsoluteFill style={{ overflow: "hidden" }}>
-    <Video src={src} startFrom={startFrom} loop={loop} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    <Sequence from={-startFrom}>
+      <OffthreadVideo src={src} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+    </Sequence>
     <AbsoluteFill style={{ background: `linear-gradient(160deg, rgba(0,0,0,${overlayOpacity * 0.9}) 0%, rgba(13,0,255,${overlayOpacity * 0.07}) 50%, rgba(0,0,0,${overlayOpacity}) 100%)`, pointerEvents: "none" }} />
   </AbsoluteFill>
 );
@@ -182,9 +188,8 @@ const DemoBG: React.FC<{
 }> = ({ src, overlayOpacity = 0.3 }) => (
   <AbsoluteFill style={{ overflow: "hidden", background: "#06080F" }}>
     {/* Single centered video — natural size, no crop */}
-    <Video
+    <OffthreadVideo
       src={src}
-      loop
       muted
       style={{
         position: "absolute",
@@ -454,8 +459,8 @@ const Scene2SlideB: React.FC = () => {
 
 const Scene2: React.FC = () => (
   <>
-    <Sequence from={0}   durationInFrames={300}><Scene2SlideA /></Sequence>
-    <Sequence from={300} durationInFrames={300}><Scene2SlideB /></Sequence>
+    <Sequence from={0}   durationInFrames={240}><Scene2SlideA /></Sequence>
+    <Sequence from={240} durationInFrames={150}><Scene2SlideB /></Sequence>
   </>
 );
 
@@ -504,7 +509,7 @@ const Scene3Plot: React.FC = () => {
 const Scene3: React.FC = () => (
   <>
     <Sequence from={0}   durationInFrames={225}><Scene3Mass /></Sequence>
-    <Sequence from={225} durationInFrames={225}><Scene3Plot /></Sequence>
+    <Sequence from={225} durationInFrames={200}><Scene3Plot /></Sequence>
   </>
 );
 
@@ -595,7 +600,7 @@ const Scene5B: React.FC = () => {
   const f = useCurrentFrame();
   return (
     <>
-      <LandscapeBG src={REF} startFrom={990} overlayOpacity={0.50} />
+      <LandscapeBG src={REF} startFrom={1050} overlayOpacity={0.50} />
       <Grid opacity={0.07} />
       <DTitle num="02 / GENERATIVE PLANNING" title="AI-Driven Urban Layout Generation" f={f} startF={8} />
       <BotLabel text="Generative Urban Planning" f={f} startF={28} />
@@ -613,7 +618,7 @@ const Scene5C: React.FC = () => {
   const isoProgress = clamp((f - 48) / 200, 0, 1);
   return (
     <>
-      <LandscapeBG src={REF} startFrom={1380} overlayOpacity={0.52} />
+      <LandscapeBG src={REF} startFrom={1500} overlayOpacity={0.52} />
       <DTitle num="03 / 20-MINUTE CITY" title="Proximity Scoring & Isochrone Analysis" f={f} startF={8} />
       <IsoRings cx={960} cy={590} progress={isoProgress} />
       <BotLabel text="20-Minute City Scoring" f={f} startF={28} />
@@ -627,7 +632,7 @@ const Scene5D: React.FC = () => {
   const f = useCurrentFrame();
   return (
     <>
-      <LandscapeBG src={REF} startFrom={1770} overlayOpacity={0.46} />
+      <LandscapeBG src={REF} startFrom={1950} overlayOpacity={0.46} />
       <Grid opacity={0.06} />
       <DTitle num="04 / INTERACTIVE TECH" title="Real-Time Planning Interface" f={f} startF={8} />
       <BotLabel text="Interactive Technology Development" f={f} startF={28} />
@@ -638,13 +643,14 @@ const Scene5D: React.FC = () => {
 };
 
 const Scene5: React.FC = () => {
-  const CD = 390;
+  // 1795 total frames → 449 + 449 + 449 + 448
+  const CD = 449;
   return (
     <>
       <Sequence from={0}      durationInFrames={CD}><Scene5A /></Sequence>
       <Sequence from={CD}     durationInFrames={CD}><Scene5B /></Sequence>
       <Sequence from={CD * 2} durationInFrames={CD}><Scene5C /></Sequence>
-      <Sequence from={CD * 3} durationInFrames={CD}><Scene5D /></Sequence>
+      <Sequence from={CD * 3} durationInFrames={448}><Scene5D /></Sequence>
     </>
   );
 };
