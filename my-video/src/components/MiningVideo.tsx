@@ -55,7 +55,7 @@ const C = {
 
 // ─── Asset paths ──────────────────────────────────────────────────────────────
 const A = {
-  mineSite: staticFile("assets/vantor-mine-site.webp"),
+  mineSite: staticFile("assets/mine-site-trucks.webp"),
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -114,20 +114,45 @@ const MineSiteBg: React.FC<{
 );
 
 // ─── Site Boundary Polygon ────────────────────────────────────────────────────
-// The mine site boundary drawn progressively
-// Polygon traced from real Vantor satellite image (2560×1440 → 1920×1080, 16:9 no crop).
-// Mine fills most of the frame; dark scrub band on the far left; pointed right tip.
-//   top edge   ≈ y 3%  (32px)
-//   bottom     ≈ y 85% (918px)
-//   left       ≈ x 5.5% (106px)
-//   right tip  ≈ x 96%, y 36% → (1843, 389)
-//   taper apex ≈ x 77% (1478px)
+// Traced from user's hand-drawn red boundary in public/references/Site boundary.jpg
+// The reference was drawn directly on top of the satellite image.
+//
+// mine-site-trucks.webp (1577×848) with objectFit:cover on 1920×1080:
+//   scale=1.274 → displayed 2009×1080, horizontal crop 44.5px each side
+//   Vertical: full height, no crop.
+//
+// Exact coordinates extracted from user's Adobe Illustrator file
+// (Site boundary-01.ai, viewBox="0 0 1920 1080").
+// Path parsed with bezier curves sampled at t=0.25/0.5/0.75/1.
+// 27 points total — do NOT simplify; every vertex matters.
 const SITE_POLY = [
-  { x: 106,  y: 32  },   // top-left
-  { x: 1478, y: 26  },   // top-right (where right slope begins)
-  { x: 1843, y: 389 },   // right tip
-  { x: 1568, y: 920 },   // bottom-right
-  { x: 106,  y: 912 },   // bottom-left
+  { x:   32, y:  253 },  // left wall top
+  { x:   32, y: 1052 },  // bottom-left
+  { x: 1178, y: 1066 },  // bottom – right staircase start
+  { x: 1171, y:  766 },  // staircase: step UP
+  { x: 1273, y:  761 },  // staircase: step RIGHT
+  { x: 1273, y:  841 },  // staircase: step DOWN
+  { x: 1652, y:  847 },  // staircase: step RIGHT
+  { x: 1661, y:  951 },  // staircase: step DOWN
+  { x: 1793, y:  941 },  // staircase: step RIGHT
+  { x: 1808, y:   37 },  // top-right corner
+  { x: 1486, y:   46 },  // top edge moving left
+  { x: 1299, y:  158 },  // notch right wall – diagonal down
+  { x: 1128, y:  334 },  // notch right wall – continuing down
+  { x: 1008, y:  291 },  // notch kink (slight upturn before curve)
+  { x: 1006, y:  301 },  // bezier t=0.25
+  { x:  994, y:  330 },  // bezier t=0.50
+  { x:  960, y:  372 },  // bezier t=0.75
+  { x:  893, y:  424 },  // bezier end (cubic)
+  { x:  827, y:  467 },  // smooth bezier t=0.25
+  { x:  793, y:  489 },  // smooth bezier t=0.50
+  { x:  780, y:  497 },  // smooth bezier t=0.75
+  { x:  778, y:  498 },  // notch bottom deepest point
+  { x:  708, y:  486 },  // notch left wall – line segment
+  { x:  691, y:  201 },  // notch left wall top (haul road left edge)
+  { x:  241, y:  210 },  // top edge left of notch
+  { x:  169, y:  305 },  // upper-left irregular terrain
+  { x:  101, y:  294 },  // upper-left terrain
 ];
 
 // Calculate perimeter for dash animation
@@ -203,21 +228,23 @@ const SiteBoundary: React.FC<{
 };
 
 // ─── Charging Station Pads ────────────────────────────────────────────────────
-// Charging pads placed in the flat bottom-left staging area of the real image
+// Charging pads placed in the organised right-section parking/fleet area
+// (the rows of vehicles visible at x≈1050–1600, y≈440–820 on canvas)
 const CHARGER_POSITIONS = [
-  { x: 185, y: 648, id: "CH-01" },
-  { x: 260, y: 648, id: "CH-02" },
-  { x: 335, y: 648, id: "CH-03" },
-  { x: 185, y: 712, id: "CH-04" },
-  { x: 260, y: 712, id: "CH-05" },
-  { x: 335, y: 712, id: "CH-06" },
-  { x: 185, y: 776, id: "CH-07" },
-  { x: 260, y: 776, id: "CH-08" },
-  { x: 335, y: 776, id: "CH-09" },
+  { x: 1080, y: 480, id: "CH-01" },
+  { x: 1160, y: 480, id: "CH-02" },
+  { x: 1240, y: 480, id: "CH-03" },
+  { x: 1080, y: 555, id: "CH-04" },
+  { x: 1160, y: 555, id: "CH-05" },
+  { x: 1240, y: 555, id: "CH-06" },
+  { x: 1080, y: 630, id: "CH-07" },
+  { x: 1160, y: 630, id: "CH-08" },
+  { x: 1240, y: 630, id: "CH-09" },
 ];
 
-const SUBSTATION_POS = { x: 120, y: 712 };
-const TRUCK_ENTRY = { x: 88, y: 750 };
+const SUBSTATION_POS = { x: 1010, y: 555 };
+// Trucks enter from the haul road that curves through centre of image
+const TRUCK_ENTRY = { x: 920, y: 520 };
 
 const ChargingLayout: React.FC<{ progress: number; variant?: number }> = ({
   progress,
@@ -321,10 +348,10 @@ const ChargingLayout: React.FC<{ progress: number; variant?: number }> = ({
         );
       })}
 
-      {/* Truck access road from site entry into the staging grid */}
+      {/* Haul road spur from main road into the charging grid */}
       {progress > 0.6 && (
         <path
-          d={`M ${TRUCK_ENTRY.x + off.dx} ${TRUCK_ENTRY.y + off.dy} Q ${130 + off.dx} ${740 + off.dy} ${155 + off.dx} ${720 + off.dy} L ${165 + off.dx} ${712 + off.dy}`}
+          d={`M ${TRUCK_ENTRY.x + off.dx} ${TRUCK_ENTRY.y + off.dy} Q ${960 + off.dx} ${500 + off.dy} ${1000 + off.dx} ${520 + off.dy} L ${1060 + off.dx} ${530 + off.dy}`}
           stroke={C.sand}
           strokeWidth={14}
           fill="none"
@@ -336,12 +363,73 @@ const ChargingLayout: React.FC<{ progress: number; variant?: number }> = ({
   );
 };
 
-// ─── Constraint Rings ─────────────────────────────────────────────────────────
-// Positioned over real features visible in the satellite image
+// ─── Site Functional Zones ────────────────────────────────────────────────────
+// Polygon-based zones mapped to real features in mine-site-trucks.webp at
+// 1920×1080.  Each zone has: points[], fill colour, border colour, label,
+// and a label anchor (lx, ly).
+const SITE_ZONES = [
+  {
+    id: "pit",
+    label: "ACTIVE MINE FACE",
+    subLabel: "No-entry · Blast exclusion",
+    // Left section within boundary: x=32–691, y=253–1052
+    points: [[32,253],[691,201],[700,490],[650,900],[32,1052]] as [number,number][],
+    fill: C.red,
+    border: C.red,
+  },
+  {
+    id: "haul",
+    label: "PRIMARY HAUL ROAD",
+    subLabel: "Heavy vehicle corridor",
+    // The notch corridor: x=691–1486, follows the curved notch shape
+    points: [[691,201],[1486,46],[1299,158],[1128,334],[960,372],[778,498],[708,486]] as [number,number][],
+    fill: C.amber,
+    border: C.amber,
+  },
+  {
+    id: "workshop",
+    label: "WORKSHOP & MAINTENANCE",
+    subLabel: "Buildings · MCC · Substation",
+    // Upper-right: x=1486–1808, y=37–761
+    points: [[1486,46],[1808,37],[1793,761],[1171,761]] as [number,number][],
+    fill: C.electricBlue,
+    border: C.electricBlue,
+  },
+  {
+    id: "charging",
+    label: "BEV CHARGING ZONE",
+    subLabel: "Proposed 9 × 350 kW pads",
+    // Mid-right between staircase levels: x=1171–1652, y=761–847
+    points: [[1171,761],[1652,847],[1273,841],[1273,761]] as [number,number][],
+    fill: C.cyan,
+    border: C.cyan,
+  },
+  {
+    id: "fleet",
+    label: "FLEET STAGING",
+    subLabel: "Truck parking · Pre-shift bay",
+    // Lower-right staircase area: x=1652–1793, y=847–941
+    points: [[1652,847],[1793,941],[1661,951],[1273,841]] as [number,number][],
+    fill: C.teal,
+    border: C.teal,
+  },
+  {
+    id: "stockpile",
+    label: "ORE STOCKPILE",
+    subLabel: "ROM pad · Crusher feed",
+    // Bottom: x=32–1178, y=900–1066
+    points: [[650,900],[1178,1066],[32,1052]] as [number,number][],
+    fill: C.sand,
+    border: C.sandDark,
+  },
+];
+
+// ─── Constraint Circles ───────────────────────────────────────────────────────
+// Precise hazard markers overlaid on the zone map
 const CONSTRAINT_ZONES = [
-  { cx: 820,  cy: 500, r: 130, color: C.red,    label: "ACTIVE BLAST ZONE" },  // center pit
-  { cx: 1560, cy: 360, r: 105, color: C.orange, label: "NO-BUILD BUFFER"   },  // east tip
-  { cx: 1150, cy: 740, r: 85,  color: C.amber,  label: "DRAINAGE SETBACK"  },  // SE berm
+  { cx: 380,  cy: 380, r: 110, color: C.red,    label: "BLAST EXCLUSION" },  // pit centre
+  { cx: 1780, cy: 290, r: 80,  color: C.orange, label: "HV SUBSTATION"   },  // top-right building
+  { cx: 1100, cy: 700, r: 65,  color: C.amber,  label: "DRAINAGE SUMP"   },  // lower charging area
 ];
 
 const ConstraintOverlays: React.FC<{ progress: number }> = ({ progress }) => (
@@ -386,6 +474,91 @@ const ConstraintOverlays: React.FC<{ progress: number }> = ({ progress }) => (
     })}
   </svg>
 );
+
+// ─── Site Zone Overlays ───────────────────────────────────────────────────────
+// Renders coloured polygon fills + labels for each functional zone.
+// `progress` 0→1 staggers each zone fading in.
+const SiteZones: React.FC<{ progress: number; fillAlpha?: number }> = ({
+  progress,
+  fillAlpha = 0.18,
+}) => {
+  // Label centroid: average of polygon vertices
+  const centroid = (pts: [number, number][]) => ({
+    x: pts.reduce((s, p) => s + p[0], 0) / pts.length,
+    y: pts.reduce((s, p) => s + p[1], 0) / pts.length,
+  });
+
+  return (
+    <svg
+      width={1920}
+      height={1080}
+      style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}
+    >
+      {SITE_ZONES.map((z, i) => {
+        const p = clamp((progress - i * 0.14) / 0.28, 0, 1);
+        if (p === 0) return null;
+        const pts = z.points.map((pt) => pt.join(",")).join(" ");
+        const c = centroid(z.points);
+        const labelOpacity = clamp((p - 0.5) * 3, 0, 1);
+        const lw = z.label.length * 7.4 + 20;
+        const lh = 34;
+
+        return (
+          <g key={z.id} opacity={p}>
+            {/* Filled polygon */}
+            <polygon
+              points={pts}
+              fill={z.fill}
+              fillOpacity={fillAlpha * p}
+              stroke={z.border}
+              strokeOpacity={0.7 * p}
+              strokeWidth={1.5}
+              strokeDasharray="10 6"
+            />
+            {/* Zone label badge */}
+            {labelOpacity > 0 && (
+              <g opacity={labelOpacity}>
+                <rect
+                  x={c.x - lw / 2}
+                  y={c.y - lh / 2}
+                  width={lw}
+                  height={lh}
+                  rx={4}
+                  fill="rgba(4,11,22,0.80)"
+                  stroke={z.border}
+                  strokeOpacity={0.5}
+                  strokeWidth={1}
+                />
+                <text
+                  x={c.x}
+                  y={c.y - 4}
+                  textAnchor="middle"
+                  fill={z.fill}
+                  fontSize={11}
+                  fontWeight="700"
+                  fontFamily={fontFamily}
+                  letterSpacing="0.10"
+                >
+                  {z.label}
+                </text>
+                <text
+                  x={c.x}
+                  y={c.y + 10}
+                  textAnchor="middle"
+                  fill="rgba(180,200,220,0.75)"
+                  fontSize={8.5}
+                  fontFamily={fontFamily}
+                >
+                  {z.subLabel}
+                </text>
+              </g>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
 
 // ─── UI Panel (Glassmorphism) ─────────────────────────────────────────────────
 const Panel: React.FC<{
@@ -704,11 +877,31 @@ const ParetoChart: React.FC<{ progress: number }> = ({ progress }) => {
 };
 
 // ─── T264 Truck Swept Path ────────────────────────────────────────────────────
-const TRUCK_PATH = `M 580 760 Q 650 720 700 680 Q 750 640 800 620 L 830 580 L 830 550 L 870 550 L 870 520 L 900 520 L 900 490 Q 920 480 940 490 L 940 550 L 970 550 L 970 580 L 970 620 L 970 650`;
+// Path follows the actual haul road visible in mine-site-trucks.webp:
+//   1. Enters from top at the concave notch (~808, 97)
+//   2. Curves down-left through the open-pit excavation area (~640, 380)
+//   3. Swings right along the lower haul road (~780, 520)
+//   4. Enters the facility / staging area (~960, 510)
+//   5. Pulls into a charging bay (~1120, 500)
+const TRUCK_PATH = `M 808 97 C 790 190 730 290 660 375 C 590 460 620 530 740 525 L 870 518 Q 940 512 1000 510 L 1080 505 L 1120 500`;
+const TRUCK_PATH_LENGTH = 720; // approximate arc length
+
+// Pre-sampled waypoints for truck-head dot (t=0..1 along path)
+const TRUCK_WX = [0,    0.10, 0.20, 0.30, 0.40, 0.50, 0.62, 0.72, 0.82, 0.90, 1.0];
+const TRUCK_PX = [808,  800,  770,  720,  670,  628,  670,  740,  870,  990, 1120];
+const TRUCK_PY = [ 97,  155,  225,  295,  360,  430,  490,  526,  519,  510,  500];
 
 const TruckPath: React.FC<{ progress: number }> = ({ progress }) => {
-  const totalLength = 480; // approximate path length
-  const drawn = progress * totalLength;
+  const drawn = progress * TRUCK_PATH_LENGTH;
+
+  const hx = interpolate(progress, TRUCK_WX, TRUCK_PX, {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const hy = interpolate(progress, TRUCK_WX, TRUCK_PY, {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
     <svg
@@ -716,59 +909,65 @@ const TruckPath: React.FC<{ progress: number }> = ({ progress }) => {
       height={1080}
       style={{ position: "absolute", top: 0, left: 0 }}
     >
-      {/* Path shadow */}
+      {/* Path glow shadow */}
       <path
         d={TRUCK_PATH}
         fill="none"
         stroke={C.green}
-        strokeWidth={18}
+        strokeWidth={20}
         strokeLinecap="round"
         strokeLinejoin="round"
-        opacity={0.08}
+        opacity={0.07}
       />
       {/* Animated swept path */}
       <path
         d={TRUCK_PATH}
         fill="none"
         stroke={C.green}
-        strokeWidth={6}
+        strokeWidth={5}
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeDasharray={totalLength}
-        strokeDashoffset={totalLength - drawn}
-        opacity={0.8}
+        strokeDasharray={TRUCK_PATH_LENGTH}
+        strokeDashoffset={TRUCK_PATH_LENGTH - drawn}
+        opacity={0.85}
       />
-      {/* Truck head dot */}
-      {progress > 0.05 && (
+      {/* Truck head dot — follows waypoints */}
+      {progress > 0.02 && (
         <>
-          <circle
-            cx={830 + (progress > 0.5 ? (progress - 0.5) * 280 : 0)}
-            cy={760 - progress * 120}
-            r={14}
-            fill={C.green}
-            opacity={0.9}
+          {/* Outer ring */}
+          <circle cx={hx} cy={hy} r={16} fill="none" stroke={C.green} strokeWidth={2} opacity={0.6} />
+          {/* Inner fill */}
+          <circle cx={hx} cy={hy} r={10} fill={C.green} opacity={0.95} />
+          {/* Label */}
+          <rect
+            x={hx + 16}
+            y={hy - 10}
+            width={46}
+            height={20}
+            rx={4}
+            fill="rgba(4,11,22,0.75)"
           />
           <text
-            x={830 + (progress > 0.5 ? (progress - 0.5) * 280 : 0) + 20}
-            y={760 - progress * 120 + 4}
+            x={hx + 20}
+            y={hy + 4}
             fill={C.green}
-            fontSize={11}
+            fontSize={12}
             fontFamily={fontFamily}
-            opacity={0.85}
+            fontWeight={700}
           >
             T264
           </text>
         </>
       )}
-      {/* Turning radius arc */}
-      {progress > 0.3 && (
+      {/* Turning radius arc — shown mid-path where the S-bend is sharpest */}
+      {progress > 0.35 && progress < 0.65 && (
         <path
-          d="M 730 700 Q 770 700 800 680"
+          d="M 630 450 Q 620 490 640 520"
           fill="none"
           stroke={C.teal}
           strokeWidth={2}
-          strokeDasharray="4 3"
-          opacity={0.5}
+          strokeDasharray="5 4"
+          opacity={0.55}
         />
       )}
     </svg>
@@ -1248,7 +1447,11 @@ const Scene2: React.FC = () => {
     extrapolateRight: "clamp",
     easing: Easing.inOut(Easing.quad),
   });
-  const constraintProgress = interpolate(frame, [200, 380], [0, 1], {
+  const zoneProgress = interpolate(frame, [140, 360], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const constraintProgress = interpolate(frame, [310, 400], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
@@ -1263,6 +1466,7 @@ const Scene2: React.FC = () => {
       <MineSiteBg dimness={0.6} />
 
       <SiteBoundary progress={polyProgress} fillOpacity={0.06} />
+      <SiteZones progress={zoneProgress} />
       <ConstraintOverlays progress={constraintProgress} />
 
       {/* Area label */}
@@ -1401,6 +1605,7 @@ const Scene3: React.FC = () => {
       <MineSiteBg dimness={0.65} />
 
       <SiteBoundary progress={1} fillOpacity={0.05} />
+      <SiteZones progress={1} fillAlpha={0.12} />
 
       {/* Scoring heat map overlay */}
       <AbsoluteFill
@@ -1508,6 +1713,7 @@ const Scene4: React.FC = () => {
       <MineSiteBg dimness={0.7} />
 
       <SiteBoundary progress={1} fillOpacity={0.05} />
+      <SiteZones progress={1} fillAlpha={0.12} />
       <ChargingLayout progress={layoutProgress} variant={0} />
 
       {/* Generation animation */}
@@ -1594,6 +1800,7 @@ const Scene5: React.FC = () => {
       <MineSiteBg dimness={0.65} />
 
       <SiteBoundary progress={1} fillOpacity={0.05} />
+      <SiteZones progress={1} fillAlpha={0.12} />
       <ChargingLayout progress={1} variant={variantIndex} />
       <ConstraintOverlays progress={1} />
 
@@ -1737,6 +1944,7 @@ const Scene6: React.FC = () => {
       <MineSiteBg dimness={0.75} />
 
       <SiteBoundary progress={1} fillOpacity={0.05} />
+      <SiteZones progress={1} fillAlpha={0.12} />
       <ChargingLayout progress={1} variant={0} />
 
       {/* Central score gauges */}
@@ -1920,6 +2128,7 @@ const Scene7: React.FC = () => {
       <MineSiteBg dimness={0.65} />
 
       <SiteBoundary progress={1} fillOpacity={0.06} />
+      <SiteZones progress={1} fillAlpha={0.12} />
       <ChargingLayout progress={1} variant={0} />
       <ConstraintOverlays progress={1} />
       <TruckPath progress={truckProgress} />
@@ -2032,6 +2241,7 @@ const Scene8: React.FC = () => {
       <MineSiteBg dimness={0.72} />
 
       <SiteBoundary progress={1} fillOpacity={0.05} />
+      <SiteZones progress={1} fillAlpha={0.12} />
       <ChargingLayout progress={1} variant={0} />
 
       {/* Large export modal */}
@@ -2227,6 +2437,7 @@ const Scene9: React.FC = () => {
 
       {/* All layers visible for closing shot */}
       <SiteBoundary progress={1} fillOpacity={0.07} />
+      <SiteZones progress={1} fillAlpha={0.14} />
       <ChargingLayout progress={1} variant={0} />
       <ConstraintOverlays progress={0.8} />
 
