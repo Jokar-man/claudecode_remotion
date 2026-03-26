@@ -50,7 +50,6 @@ const A = {
   kualalumpur: staticFile("assets/kualalumpur.jpg"),
   jakarta: staticFile("assets/jakarta.jpg"),
   lastFrameBg: staticFile("assets/last-frame-bg.jpg"),
-  globe: staticFile("assets/globe3.jpg"),
   singaporeSatellite: staticFile("assets/singapore-satellite.jpg"),
 };
 

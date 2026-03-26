@@ -2,6 +2,7 @@ import "./index.css";
 import { Composition, getStaticFiles } from "remotion";
 import { AIVideo, aiVideoSchema } from "./components/AIVideo";
 import { DBFVideo } from "./components/DBFVideo";
+import { MiningVideo } from "./components/MiningVideo";
 import { FPS, INTRO_DURATION } from "./lib/constants";
 import { getTimelinePath, loadTimelineFromFile } from "./lib/utils";
 
@@ -17,6 +18,17 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="dbf-city-scored"
         component={DBFVideo}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={120 * 30}
+        defaultProps={{}}
+      />
+
+      {/* Mining Facility Generative Layout Tool — 2-minute demo */}
+      <Composition
+        id="mining-layout-demo"
+        component={MiningVideo}
         fps={30}
         width={1920}
         height={1080}
