@@ -2,6 +2,7 @@ import "./index.css";
 import { Composition, getStaticFiles } from "remotion";
 import { AIVideo, aiVideoSchema } from "./components/AIVideo";
 import { DBFVideo } from "./components/DBFVideo";
+import { DBFWelcomeVideo } from "./components/DBFWelcomeVideo";
 import { MiningVideo } from "./components/MiningVideo";
 import { FPS, INTRO_DURATION } from "./lib/constants";
 import { getTimelinePath, loadTimelineFromFile } from "./lib/utils";
@@ -14,6 +15,17 @@ export const RemotionRoot: React.FC = () => {
 
   return (
     <>
+      {/* Digital Blue Foam — Welcome & Intro Video (1920×1080, 2 min) */}
+      <Composition
+        id="dbf-welcome"
+        component={DBFWelcomeVideo}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={120 * 30}
+        defaultProps={{}}
+      />
+
       {/* Digital Blue Foam — "The City, Scored." (1920×1080, 2 min) */}
       <Composition
         id="dbf-city-scored"
@@ -38,6 +50,7 @@ export const RemotionRoot: React.FC = () => {
 
       {timelines.map((storyName) => (
         <Composition
+          key={storyName}
           id={storyName}
           component={AIVideo}
           fps={FPS}
