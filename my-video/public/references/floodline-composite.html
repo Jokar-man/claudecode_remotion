@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1918" />
+<title>Flood Line Analysis — Inundation View</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; font-family: -apple-system, 'Segoe UI', Arial, sans-serif; }
+
+  /* ── Root shell — matches App.jpg exactly ── */
+  .app {
+    width: 1918px; height: 1078px;
+    display: flex; flex-direction: column;
+    overflow: hidden; position: relative;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    height: 44px; background: #0d1a2e;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 12px; flex-shrink: 0;
+    border-bottom: 1px solid #1a3050;
+  }
+  .topbar-tab {
+    font-size: 13px; color: #7aaac8; padding: 4px 10px;
+    border-radius: 4px; cursor: pointer;
+  }
+  .topbar-tab.active { background: #1a3050; color: #fff; }
+  .topbar-search {
+    flex: 1; max-width: 320px; height: 28px;
+    background: #07101e; border: 1px solid #1a3050; border-radius: 4px;
+    color: #ccc; font-size: 13px; padding: 0 8px; margin-left: 8px;
+  }
+  .topbar-label { font-size: 12px; color: #4a7a9a; margin-left: 16px; }
+  .topbar-value { font-size: 12px; color: #90c0e0; font-weight: 600; margin-right: 4px; }
+
+  /* ── Main body ── */
+  .body { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── Left panel ── */
+  .left-panel {
+    width: 210px; background: #eef3f8; flex-shrink: 0;
+    overflow-y: auto; border-right: 1px solid #c0d0e0;
+    display: flex; flex-direction: column;
+  }
+  .panel-section {
+    border-bottom: 1px solid #c8d8e8; padding: 10px 12px 8px;
+  }
+  .section-title {
+    font-size: 12px; font-weight: 700; color: #1a4a7a;
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 7px;
+  }
+
+  /* Depth bars */
+  .depth-bar-wrap { margin-bottom: 5px; }
+  .depth-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: #4a6a8a; margin-bottom: 2px;
+  }
+  .depth-bar-track {
+    height: 8px; border-radius: 3px; background: #d0dde8;
+  }
+  .depth-bar-fill { height: 100%; border-radius: 3px; }
+
+  /* return period rows */
+  .ari-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 5px;
+  }
+  .ari-dot { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; }
+  .ari-label { font-size: 11px; color: #3a608a; flex: 1; }
+  .ari-area { font-size: 11px; font-weight: 700; color: #1a3060; }
+
+  /* score grid */
+  .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+  .score-cell {
+    background: #fff; border: 1px solid #c0d0e0; border-radius: 4px;
+    padding: 6px 4px; text-align: center;
+  }
+  .score-num { font-size: 15px; font-weight: 700; line-height: 1; }
+  .score-lbl { font-size: 10px; color: #5a80a0; margin-top: 2px; }
+
+  /* donut */
+  .donut-wrap { display: flex; justify-content: center; padding: 6px 0; }
+  .donut-inner { position: relative; width: 72px; height: 72px; }
+  .donut-inner svg { width: 72px; height: 72px; }
+  .donut-text {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    text-align: center;
+  }
+  .donut-pct { font-size: 16px; font-weight: 700; }
+  .donut-sub { font-size: 9px; color: #6a90b0; display: block; }
+
+  .info-row {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: #4a6a8a; padding: 3px 0;
+    border-bottom: 1px dotted #c8d8e8;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-val { font-weight: 600; color: #1a3060; }
+
+  .expand-btn {
+    font-size: 10.5px; color: #5a90b8; cursor: pointer;
+    display: flex; align-items: center; gap: 3px; padding: 5px 0;
+  }
+
+  /* ── Center map ── */
+  .map-area {
+    flex: 1; position: relative; overflow: hidden; background: #071018;
+  }
+  .map-area img.flood {
+    width: 100%; height: 100%; object-fit: cover;
+    opacity: 0.92;
+  }
+
+  /* overlays */
+  .map-overlay-title {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(0,10,30,0.78); border: 1px solid #2050a0;
+    border-radius: 5px; padding: 7px 14px; color: #90c4f0;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.06em;
+  }
+  .map-scale {
+    position: absolute; bottom: 14px; left: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .scale-bar {
+    width: 80px; height: 4px;
+    background: linear-gradient(90deg,#fff 50%,transparent 50%);
+    background-size: 20px 100%; border: 1px solid #888;
+  }
+  .scale-label { font-size: 11px; color: #aaa; }
+
+  /* depth gradient bar — bottom centre */
+  .depth-overlay {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,10,30,0.82); border: 1px solid #1a3050;
+    border-radius: 5px; padding: 9px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .depth-label { font-size: 11px; color: #6a9ab8; margin-right: 4px; }
+  .depth-grad {
+    width: 160px; height: 13px; border-radius: 3px;
+    background: linear-gradient(90deg,
+      #ddeeff 0%, #aad4f0 14%, #6aaee0 28%,
+      #3080d0 42%, #1050b0 56%, #082890 70%, #040e4e 85%, #020820 100%);
+  }
+  .depth-min { font-size: 11px; color: #90c4f0; }
+  .depth-max { font-size: 11px; color: #4060c0; }
+  .depth-unit { font-size: 10px; color: #5a8ab0; }
+
+  /* ARI badge — top right of map */
+  .ari-badge {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(0,10,30,0.82); border: 1px solid #2050a0;
+    border-radius: 5px; padding: 10px 12px; min-width: 130px;
+  }
+  .ari-badge-title { font-size: 10px; color: #5a8ab0; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .ari-badge-row { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+  .ari-badge-swatch { width: 30px; height: 10px; border-radius: 2px; }
+  .ari-badge-text { font-size: 10px; color: #90c4f0; }
+
+  /* ── Right panel ── */
+  .right-panel {
+    width: 240px; background: #eef3f8; flex-shrink: 0;
+    border-left: 1px solid #c0d0e0; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .right-panel .panel-section { padding: 10px 12px 8px; }
+
+  .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .legend-swatch { width: 16px; height: 16px; border-radius: 2px; flex-shrink: 0; }
+  .legend-text { font-size: 11px; color: #2a5a8a; flex: 1; }
+  .legend-range { font-size: 10px; color: #6a90b0; }
+
+  /* depth gradient legend bar */
+  .depth-grad-full {
+    width: 100%; height: 18px; border-radius: 3px; margin-bottom: 4px;
+    background: linear-gradient(90deg,
+      #ddeeff 0%, #aad4f0 18%, #6aaee0 34%,
+      #3080d0 50%, #1050b0 66%, #082890 82%, #020820 100%);
+  }
+  .depth-grad-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: #5a80a0; margin-bottom: 8px;
+  }
+
+  .layer-row { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+  .layer-toggle {
+    width: 28px; height: 15px; border-radius: 8px;
+    border: 1px solid #2060a0; background: #1a4a9a;
+    position: relative; flex-shrink: 0;
+  }
+  .layer-toggle .knob {
+    position: absolute; right: 1px; top: 1px;
+    width: 11px; height: 11px; border-radius: 50%; background: #fff;
+  }
+  .layer-toggle.off { background: #c0cdd8; border-color: #90a8c0; }
+  .layer-toggle.off .knob { right: auto; left: 1px; background: #eee; }
+  .layer-name { font-size: 11px; color: #2a5a8a; }
+  .layer-opacity { font-size: 10px; color: #6a90b0; margin-left: auto; }
+
+  .basemap-thumbs { display: flex; gap: 5px; margin-top: 4px; }
+  .basemap-thumb {
+    width: 58px; height: 42px; border-radius: 3px; overflow: hidden;
+    border: 2px solid transparent; cursor: pointer;
+  }
+  .basemap-thumb.active { border-color: #2060c0; }
+  .basemap-thumb-label { font-size: 9px; color: #5a80a0; text-align: center; margin-top: 2px; }
+
+  .insights-item {
+    background: #fff; border-left: 3px solid #2060c0;
+    border-radius: 0 3px 3px 0; padding: 6px 8px; margin-bottom: 6px;
+  }
+  .insights-item.warn { border-left-color: #c03020; }
+  .insights-item.amber { border-left-color: #c08000; }
+  .insights-head { font-size: 11px; font-weight: 700; color: #1a3060; }
+  .insights-body { font-size: 10px; color: #5a80a0; margin-top: 2px; line-height: 1.4; }
+  .tag {
+    display: inline-block; font-size: 9px; padding: 2px 6px;
+    border-radius: 8px; font-weight: 600; margin-top: 3px;
+  }
+  .tag-high   { background: #fde0de; color: #8b1a10; }
+  .tag-med    { background: #fff3cd; color: #856404; }
+  .tag-low    { background: #d4e8ff; color: #004085; }
+  .tag-ok     { background: #d4edda; color: #155724; }
+
+  /* bottom status bar */
+  .statusbar {
+    height: 26px; background: #07101e; border-top: 1px solid #102038;
+    display: flex; align-items: center; padding: 0 12px; gap: 16px;
+    flex-shrink: 0;
+  }
+  .status-item { font-size: 11px; color: #4a7a9a; }
+  .status-item b { color: #80b8d8; font-weight: 600; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #2060c0; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── TOP BAR ── -->
+  <div class="topbar">
+    <div class="topbar-tab active">Flood Line Analysis</div>
+    <div class="topbar-tab">Inundation Depth</div>
+    <div class="topbar-tab">Return Periods</div>
+    <div class="topbar-tab">Velocity</div>
+    <div class="topbar-tab">Infrastructure Risk</div>
+    <input class="topbar-search" placeholder="Search location or flood gauge…" />
+    <div style="flex:1"></div>
+    <div class="topbar-label">Model:</div>
+    <div class="topbar-value">HEC-RAS 2D</div>
+    <div class="topbar-label">Reference:</div>
+    <div class="topbar-value">1% AEP (1:100)</div>
+    <div class="topbar-label">Datum:</div>
+    <div class="topbar-value">AHD71</div>
+    <div style="width:6px;height:6px;border-radius:50%;background:#2060c0;margin-left:8px"></div>
+    <div class="topbar-label" style="color:#80b8d8">Live Model</div>
+  </div>
+
+  <!-- ── MAIN BODY ── -->
+  <div class="body">
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left-panel">
+
+      <!-- Inundation Depth Profile -->
+      <div class="panel-section">
+        <div class="section-title">Inundation Depth</div>
+        <div class="depth-bar-wrap">
+          <div class="depth-bar-label"><span>0 – 0.3 m</span><span>26%</span></div>
+          <div class="depth-bar-track">
+            <div class="depth-bar-fill" style="width:26%;background:#aad4f0"></div>
+          </div>
+        </div>
+        <div class="depth-bar-wrap">
+          <div class="depth-bar-label"><span>0.3 – 0.9 m</span><span>34%</span></div>
+          <div class="depth-bar-track">
+            <div class="depth-bar-fill" style="width:34%;background:#6aaee0"></div>
+          </div>
+        </div>
+        <div class="depth-bar-wrap">
+          <div class="depth-bar-label"><span>0.9 – 1.8 m</span><span>24%</span></div>
+          <div class="depth-bar-track">
+            <div class="depth-bar-fill" style="width:24%;background:#3080d0"></div>
+          </div>
+        </div>
+        <div class="depth-bar-wrap">
+          <div class="depth-bar-label"><span>1.8 – 3.0 m</span><span>11%</span></div>
+          <div class="depth-bar-track">
+            <div class="depth-bar-fill" style="width:11%;background:#1050b0"></div>
+          </div>
+        </div>
+        <div class="depth-bar-wrap">
+          <div class="depth-bar-label"><span>&gt; 3.0 m</span><span>5%</span></div>
+          <div class="depth-bar-track">
+            <div class="depth-bar-fill" style="width:5%;background:#020820"></div>
+          </div>
+        </div>
+        <div style="margin-top:6px">
+          <div class="info-row"><span>Max depth</span><span class="info-val">4.8 m</span></div>
+          <div class="info-row"><span>Mean depth</span><span class="info-val">0.84 m</span></div>
+          <div class="info-row"><span>Inundated area</span><span class="info-val">3.2 km²</span></div>
+          <div class="info-row"><span>Flood volume</span><span class="info-val">2.69 GL</span></div>
+        </div>
+      </div>
+
+      <!-- Return Period Classification -->
+      <div class="panel-section">
+        <div class="section-title">Return Period (ARI)</div>
+        <div class="ari-row">
+          <div class="ari-dot" style="background:#ddeeff;border:1px solid #aac0d8"></div>
+          <div class="ari-label">1 : 10 yr (10% AEP)</div>
+          <div class="ari-area">0.8 km²</div>
+        </div>
+        <div class="ari-row">
+          <div class="ari-dot" style="background:#aad4f0"></div>
+          <div class="ari-label">1 : 20 yr (5% AEP)</div>
+          <div class="ari-area">1.4 km²</div>
+        </div>
+        <div class="ari-row">
+          <div class="ari-dot" style="background:#6aaee0"></div>
+          <div class="ari-label">1 : 50 yr (2% AEP)</div>
+          <div class="ari-area">2.1 km²</div>
+        </div>
+        <div class="ari-row">
+          <div class="ari-dot" style="background:#3080d0"></div>
+          <div class="ari-label">1 : 100 yr (1% AEP)</div>
+          <div class="ari-area">3.2 km²</div>
+        </div>
+        <div class="ari-row">
+          <div class="ari-dot" style="background:#082890"></div>
+          <div class="ari-label">1 : 500 yr (0.2% AEP)</div>
+          <div class="ari-area">4.9 km²</div>
+        </div>
+        <div class="ari-row">
+          <div class="ari-dot" style="background:#020820"></div>
+          <div class="ari-label">PMF / Extreme</div>
+          <div class="ari-area">7.1 km²</div>
+        </div>
+      </div>
+
+      <!-- Flood Risk Scores -->
+      <div class="panel-section">
+        <div class="section-title">Risk Scores</div>
+        <div class="score-grid">
+          <div class="score-cell">
+            <div class="score-num" style="color:#c03020">72</div>
+            <div class="score-lbl">Hazard</div>
+          </div>
+          <div class="score-cell">
+            <div class="score-num" style="color:#c08000">58</div>
+            <div class="score-lbl">Exposure</div>
+          </div>
+          <div class="score-cell">
+            <div class="score-num" style="color:#2060c0">44</div>
+            <div class="score-lbl">Vulnerability</div>
+          </div>
+          <div class="score-cell">
+            <div class="score-num" style="color:#c03020">61</div>
+            <div class="score-lbl">Risk Index</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inundation Risk Donut -->
+      <div class="panel-section">
+        <div class="section-title">Overall Flood Risk</div>
+        <div class="donut-wrap">
+          <div class="donut-inner">
+            <svg viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r="24" fill="none" stroke="#d0dde8" stroke-width="8"/>
+              <!-- 61% risk; 2π×24≈150.8; 61%≈92 -->
+              <circle cx="32" cy="32" r="24" fill="none" stroke="#c03020" stroke-width="8"
+                stroke-dasharray="92 59" stroke-dashoffset="37.7"
+                stroke-linecap="round" transform="rotate(-90 32 32)"/>
+            </svg>
+            <div class="donut-text">
+              <div class="donut-pct" style="color:#c03020">61%</div>
+              <span class="donut-sub">Flood Risk</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-row"><span>Design event</span><span class="info-val">1:100 ARI</span></div>
+        <div class="info-row"><span>Freeboard req.</span><span class="info-val">0.5 m</span></div>
+        <div class="info-row"><span>Evacuation</span><span class="info-val" style="color:#c08000">Moderate</span></div>
+      </div>
+
+      <!-- Catchment Analysis -->
+      <div class="panel-section">
+        <div class="section-title">Catchment Analysis</div>
+        <div class="info-row"><span>Catchment area</span><span class="info-val">28.4 km²</span></div>
+        <div class="info-row"><span>Time of conc.</span><span class="info-val">3.2 hr</span></div>
+        <div class="info-row"><span>Peak discharge</span><span class="info-val">142 m³/s</span></div>
+        <div class="info-row"><span>Runoff coeff.</span><span class="info-val">0.71</span></div>
+        <div class="info-row"><span>Imperviousness</span><span class="info-val">58%</span></div>
+      </div>
+
+      <!-- Expand links -->
+      <div class="panel-section">
+        <div class="expand-btn">▶ Flood Modelling Methodology</div>
+        <div class="expand-btn">▶ Export Inundation Report</div>
+      </div>
+
+    </div><!-- /left-panel -->
+
+    <!-- ── CENTER MAP ── -->
+    <div class="map-area">
+      <img class="flood" src="flood lines.jpeg" alt="Flood Line Analysis" />
+
+      <!-- Title badge -->
+      <div class="map-overlay-title">FLOOD LINE ANALYSIS — 1:100 ARI INUNDATION EXTENT</div>
+
+      <!-- ARI return period legend badge — top right -->
+      <div class="ari-badge">
+        <div class="ari-badge-title">Return Period</div>
+        <div class="ari-badge-row">
+          <div class="ari-badge-swatch" style="background:#ddeeff;border:1px solid #aac0d8"></div>
+          <div class="ari-badge-text">1:10 yr</div>
+        </div>
+        <div class="ari-badge-row">
+          <div class="ari-badge-swatch" style="background:#aad4f0"></div>
+          <div class="ari-badge-text">1:20 yr</div>
+        </div>
+        <div class="ari-badge-row">
+          <div class="ari-badge-swatch" style="background:#6aaee0"></div>
+          <div class="ari-badge-text">1:50 yr</div>
+        </div>
+        <div class="ari-badge-row">
+          <div class="ari-badge-swatch" style="background:#3080d0"></div>
+          <div class="ari-badge-text">1:100 yr ← active</div>
+        </div>
+        <div class="ari-badge-row">
+          <div class="ari-badge-swatch" style="background:#082890"></div>
+          <div class="ari-badge-text">1:500 yr</div>
+        </div>
+        <div class="ari-badge-row">
+          <div class="ari-badge-swatch" style="background:none;border:1.5px dashed #e04030"></div>
+          <div class="ari-badge-text">Risk zone boundary</div>
+        </div>
+      </div>
+
+      <!-- Depth gradient bar — bottom centre -->
+      <div class="depth-overlay">
+        <span class="depth-label">DEPTH</span>
+        <span class="depth-min">0.0 m</span>
+        <div class="depth-grad"></div>
+        <span class="depth-max">4.8 m+</span>
+        <span class="depth-unit">HEC-RAS 2D · Manning n=0.035 · 1:100 ARI</span>
+      </div>
+
+      <!-- Scale bar -->
+      <div class="map-scale">
+        <div class="scale-bar"></div>
+        <div class="scale-label">0 &nbsp; 0.5 &nbsp; 1 km</div>
+      </div>
+    </div><!-- /map-area -->
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right-panel">
+
+      <!-- Flood Depth Legend -->
+      <div class="panel-section">
+        <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Depth Legend</span>
+          <span style="font-size:8px;color:#6a90b0;font-weight:400">⚙</span>
+        </div>
+        <div class="depth-grad-full"></div>
+        <div class="depth-grad-labels">
+          <span>Shallow</span><span>Moderate</span><span>Deep</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#ddeeff;border:1px solid #aac0d8"></div>
+          <div class="legend-text">Nuisance Flooding</div>
+          <div class="legend-range">0–0.3 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#aad4f0"></div>
+          <div class="legend-text">Shallow Inundation</div>
+          <div class="legend-range">0.3–0.9 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#6aaee0"></div>
+          <div class="legend-text">Moderate Flooding</div>
+          <div class="legend-range">0.9–1.8 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#3080d0"></div>
+          <div class="legend-text">Deep Flooding</div>
+          <div class="legend-range">1.8–3.0 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#082890"></div>
+          <div class="legend-text">Extreme Depth</div>
+          <div class="legend-range">3.0–4.8 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#020820"></div>
+          <div class="legend-text">Channel / River</div>
+          <div class="legend-range">&gt;4.8 m</div>
+        </div>
+      </div>
+
+      <!-- Boundary Legend -->
+      <div class="panel-section">
+        <div class="section-title">Flood Boundaries</div>
+        <div class="legend-row">
+          <svg width="16" height="14">
+            <ellipse cx="8" cy="7" rx="7" ry="5" fill="none" stroke="#e03020" stroke-width="1.5" stroke-dasharray="3 2"/>
+          </svg>
+          <div class="legend-text">High risk zone</div>
+          <div class="legend-range">1:20 ARI</div>
+        </div>
+        <div class="legend-row">
+          <svg width="16" height="14">
+            <ellipse cx="8" cy="7" rx="7" ry="5" fill="none" stroke="#e07020" stroke-width="1.2" stroke-dasharray="4 2"/>
+          </svg>
+          <div class="legend-text">Moderate risk zone</div>
+          <div class="legend-range">1:100 ARI</div>
+        </div>
+        <div class="legend-row">
+          <svg width="16" height="14">
+            <line x1="0" y1="7" x2="16" y2="7" stroke="#2060c0" stroke-width="2"/>
+          </svg>
+          <div class="legend-text">Flood line boundary</div>
+          <div class="legend-range">Design</div>
+        </div>
+        <div class="legend-row">
+          <svg width="16" height="14">
+            <line x1="0" y1="7" x2="16" y2="7" stroke="#3080d0" stroke-width="1" stroke-dasharray="3 2"/>
+          </svg>
+          <div class="legend-text">Flood fringe</div>
+          <div class="legend-range">—</div>
+        </div>
+      </div>
+
+      <!-- Active Layers -->
+      <div class="panel-section">
+        <div class="section-title">Active Layers</div>
+        <div class="layer-row">
+          <div class="layer-toggle"><div class="knob"></div></div>
+          <div class="layer-name">Flood Extent Raster</div>
+          <div class="layer-opacity">90%</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle"><div class="knob"></div></div>
+          <div class="layer-name">Depth Grid</div>
+          <div class="layer-opacity">80%</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle"><div class="knob"></div></div>
+          <div class="layer-name">Risk Zone Boundaries</div>
+          <div class="layer-opacity">100%</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle"><div class="knob"></div></div>
+          <div class="layer-name">Affected Parcels</div>
+          <div class="layer-opacity">70%</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle off"><div class="knob"></div></div>
+          <div class="layer-name">Velocity Vectors</div>
+          <div class="layer-opacity">—</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle off"><div class="knob"></div></div>
+          <div class="layer-name">Flow Paths</div>
+          <div class="layer-opacity">—</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle off"><div class="knob"></div></div>
+          <div class="layer-name">Evacuation Routes</div>
+          <div class="layer-opacity">—</div>
+        </div>
+        <div style="margin-top:5px">
+          <div style="font-size:8px;color:#2060c0;cursor:pointer">+ Add Layer</div>
+        </div>
+      </div>
+
+      <!-- Flood Insights -->
+      <div class="panel-section">
+        <div class="section-title">Flood Insights</div>
+        <div class="insights-item warn">
+          <div class="insights-head">High-hazard confluence zone</div>
+          <div class="insights-body">Western basin shows dual-channel convergence. Depth exceeds 3 m at 1:100 ARI — no development recommended.</div>
+          <span class="tag tag-high">High Risk</span>
+        </div>
+        <div class="insights-item amber">
+          <div class="insights-head">Road corridor affected</div>
+          <div class="insights-body">Eastern arterial inundated to 0.6 m at 1:20 ARI. Evacuation access compromised in &lt;2 hr events.</div>
+          <span class="tag tag-med">Review Access</span>
+        </div>
+        <div class="insights-item">
+          <div class="insights-head">Buildable fringe identified</div>
+          <div class="insights-body">Northern corridor &gt;0.5 m above 1:100 ARI level with suitable freeboard. Suitable for low-density use.</div>
+          <span class="tag tag-ok">Conditional</span>
+        </div>
+        <div class="insights-item">
+          <div class="insights-head">Climate change sensitivity</div>
+          <div class="insights-body">+10% rainfall intensification shifts 1:50 ARI extent to match current 1:20 ARI boundary.</div>
+          <span class="tag tag-low">2070 Scenario</span>
+        </div>
+      </div>
+
+      <!-- Base Map -->
+      <div class="panel-section">
+        <div class="section-title">Base Map</div>
+        <div class="basemap-thumbs">
+          <div style="text-align:center">
+            <div class="basemap-thumb" style="background:linear-gradient(135deg,#c8d8e8,#e8eef4)"></div>
+            <div class="basemap-thumb-label">Streets</div>
+          </div>
+          <div style="text-align:center">
+            <div class="basemap-thumb active" style="background:linear-gradient(135deg,#aad4f0,#6aaee0,#3080d0)"></div>
+            <div class="basemap-thumb-label">Hydro</div>
+          </div>
+          <div style="text-align:center">
+            <div class="basemap-thumb" style="background:#1a1a2e"></div>
+            <div class="basemap-thumb-label">Dark</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /right-panel -->
+
+  </div><!-- /body -->
+
+  <!-- ── STATUS BAR ── -->
+  <div class="statusbar">
+    <div class="status-dot"></div>
+    <div class="status-item">Model: <b>HEC-RAS 2D · Steady State</b></div>
+    <div class="status-item">Cursor: <b>33°51′42″S  151°12′28″E</b></div>
+    <div class="status-item">Depth at cursor: <b>1.34 m</b></div>
+    <div class="status-item">Velocity: <b>0.62 m/s</b></div>
+    <div class="status-item">ARI at cursor: <b>1:100</b></div>
+    <div style="flex:1"></div>
+    <div class="status-item">Design event: <b>1% AEP (1:100 ARI)</b></div>
+    <div class="status-item">Tiles loaded: <b>52 / 52</b></div>
+  </div>
+
+</div><!-- /app -->
+</body>
+</html>

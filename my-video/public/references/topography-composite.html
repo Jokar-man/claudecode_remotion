@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1918" />
+<title>Terrain Analysis — Topography View</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #111; font-family: -apple-system, 'Segoe UI', Arial, sans-serif; }
+
+  /* ── Root shell matches App.jpg exactly ── */
+  .app {
+    width: 1918px; height: 1078px;
+    display: flex; flex-direction: column;
+    overflow: hidden; position: relative;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    height: 44px; background: #1a2a1a;
+    display: flex; align-items: center; gap: 8px;
+    padding: 0 12px; flex-shrink: 0;
+    border-bottom: 1px solid #2e4a2e;
+  }
+  .topbar-tab {
+    font-size: 13px; color: #a0c8a0; padding: 4px 10px;
+    border-radius: 4px; cursor: pointer;
+  }
+  .topbar-tab.active { background: #2e4a2e; color: #fff; }
+  .topbar-search {
+    flex: 1; max-width: 320px; height: 28px;
+    background: #0d1f0d; border: 1px solid #2e4a2e; border-radius: 4px;
+    color: #ccc; font-size: 13px; padding: 0 8px; margin-left: 8px;
+  }
+  .topbar-label { font-size: 12px; color: #6a8a6a; margin-left: 16px; }
+  .topbar-value { font-size: 12px; color: #c0dfc0; font-weight: 600; margin-right: 4px; }
+
+  /* ── Main body ── */
+  .body { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── Left panel ── */
+  .left-panel {
+    width: 210px; background: #f0f4f0; flex-shrink: 0;
+    overflow-y: auto; border-right: 1px solid #c8d8c8;
+    display: flex; flex-direction: column;
+  }
+  .panel-section {
+    border-bottom: 1px solid #d4e0d4; padding: 10px 12px 8px;
+  }
+  .section-title {
+    font-size: 12px; font-weight: 700; color: #3a5a3a;
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 7px;
+  }
+  .elev-bar-wrap { margin-bottom: 5px; }
+  .elev-bar-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: #556655; margin-bottom: 2px;
+  }
+  .elev-bar-track {
+    height: 8px; border-radius: 3px; background: #d0ddd0;
+  }
+  .elev-bar-fill {
+    height: 100%; border-radius: 3px;
+  }
+
+  .slope-row {
+    display: flex; align-items: center; gap: 6px; margin-bottom: 5px;
+  }
+  .slope-dot {
+    width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0;
+  }
+  .slope-label { font-size: 11px; color: #446044; flex: 1; }
+  .slope-pct { font-size: 11px; font-weight: 700; color: #2a4a2a; }
+
+  /* score grid */
+  .score-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 5px;
+  }
+  .score-cell {
+    background: #fff; border: 1px solid #c8d8c8; border-radius: 4px;
+    padding: 6px 4px; text-align: center;
+  }
+  .score-num {
+    font-size: 15px; font-weight: 700; color: #2a5a2a; line-height: 1;
+  }
+  .score-lbl { font-size: 10px; color: #668866; margin-top: 2px; }
+
+  /* donut */
+  .donut-wrap { display: flex; justify-content: center; padding: 6px 0; }
+  .donut-inner { position: relative; width: 72px; height: 72px; }
+  .donut-inner svg { width: 72px; height: 72px; }
+  .donut-text {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    text-align: center;
+  }
+  .donut-pct { font-size: 16px; font-weight: 700; color: #2a5a2a; }
+  .donut-sub { font-size: 9px; color: #779977; display: block; }
+
+  .info-row {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: #556655; padding: 3px 0;
+    border-bottom: 1px dotted #d0ddd0;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-val { font-weight: 600; color: #2a4a2a; }
+
+  .expand-btn {
+    font-size: 10.5px; color: #779977; cursor: pointer;
+    display: flex; align-items: center; gap: 3px; padding: 5px 0;
+  }
+
+  /* ── Center map ── */
+  .map-area {
+    flex: 1; position: relative; overflow: hidden; background: #0a0f0a;
+  }
+  .map-area img.topo {
+    width: 100%; height: 100%; object-fit: cover;
+    opacity: 0.88;
+  }
+
+  /* Map overlays */
+  .map-overlay-title {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(0,0,0,0.72); border: 1px solid #3a6a3a;
+    border-radius: 5px; padding: 7px 14px; color: #b0e0b0;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.06em;
+  }
+  .map-scale {
+    position: absolute; bottom: 14px; left: 14px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .scale-bar {
+    width: 80px; height: 4px; background: linear-gradient(90deg,#fff 50%,transparent 50%);
+    background-size: 20px 100%; border: 1px solid #888;
+  }
+  .scale-label { font-size: 11px; color: #aaa; }
+
+  /* Contour legend overlay — bottom center */
+  .contour-overlay {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.78); border: 1px solid #334433;
+    border-radius: 5px; padding: 9px 16px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .contour-label { font-size: 11px; color: #88aa88; margin-right: 4px; }
+  .contour-grad {
+    width: 150px; height: 13px; border-radius: 3px;
+    background: linear-gradient(90deg,
+      #4a1942 0%, #8b1c7a 8%, #d4406a 18%,
+      #e8824a 30%, #f5c96a 42%,
+      #fafafa 50%,
+      #9ec8e8 62%, #5aa0d8 72%, #2060c0 82%, #0a2880 92%, #04104a 100%);
+  }
+  .contour-min { font-size: 11px; color: #c89898; }
+  .contour-max { font-size: 11px; color: #98aec8; }
+  .contour-unit { font-size: 10px; color: #668866; }
+
+  /* aspect compass overlay */
+  .aspect-overlay {
+    position: absolute; top: 14px; right: 14px;
+    background: rgba(0,0,0,0.72); border: 1px solid #334433;
+    border-radius: 50%; width: 64px; height: 64px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .compass-svg { width: 56px; height: 56px; }
+
+  /* ── Right panel ── */
+  .right-panel {
+    width: 240px; background: #f0f4f0; flex-shrink: 0;
+    border-left: 1px solid #c8d8c8; overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  .right-panel .panel-section { padding: 10px 12px 8px; }
+
+  .legend-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .legend-swatch {
+    width: 16px; height: 16px; border-radius: 2px; flex-shrink: 0;
+  }
+  .legend-text { font-size: 11px; color: #446044; flex: 1; }
+  .legend-range { font-size: 10px; color: #889988; }
+
+  /* elevation gradient legend */
+  .elev-gradient-bar {
+    width: 100%; height: 18px; border-radius: 3px; margin-bottom: 4px;
+    background: linear-gradient(90deg,
+      #04104a 0%, #0a2880 12%, #2060c0 25%, #5aa0d8 38%, #9ec8e8 50%,
+      #fafafa 50%, #f5c96a 62%, #e8824a 74%, #d4406a 84%, #8b1c7a 94%, #4a1942 100%);
+  }
+  .elev-gradient-labels {
+    display: flex; justify-content: space-between;
+    font-size: 10px; color: #668866; margin-bottom: 8px;
+  }
+
+  .layer-row {
+    display: flex; align-items: center; gap: 7px; margin-bottom: 6px;
+  }
+  .layer-toggle {
+    width: 28px; height: 15px; border-radius: 8px;
+    border: 1px solid #4a7a4a; background: #2a6a2a;
+    position: relative; flex-shrink: 0;
+  }
+  .layer-toggle .knob {
+    position: absolute; right: 1px; top: 1px;
+    width: 11px; height: 11px; border-radius: 50%; background: #fff;
+  }
+  .layer-toggle.off { background: #c0ccc0; border-color: #a0b0a0; }
+  .layer-toggle.off .knob { right: auto; left: 1px; background: #eee; }
+  .layer-name { font-size: 11px; color: #446044; }
+  .layer-opacity { font-size: 10px; color: #889988; margin-left: auto; }
+
+  .basemap-thumbs { display: flex; gap: 5px; margin-top: 4px; }
+  .basemap-thumb {
+    width: 58px; height: 42px; border-radius: 3px; overflow: hidden;
+    border: 2px solid transparent; cursor: pointer;
+  }
+  .basemap-thumb.active { border-color: #4a9a4a; }
+  .basemap-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .basemap-thumb-label { font-size: 9px; color: #668866; text-align: center; margin-top: 2px; }
+
+  .insights-item {
+    background: #fff; border-left: 3px solid #4a9a4a;
+    border-radius: 0 3px 3px 0; padding: 6px 8px; margin-bottom: 6px;
+  }
+  .insights-head { font-size: 11px; font-weight: 700; color: #2a5a2a; }
+  .insights-body { font-size: 10px; color: #668866; margin-top: 2px; line-height: 1.4; }
+
+  .tag {
+    display: inline-block; font-size: 9px; padding: 2px 6px;
+    border-radius: 8px; font-weight: 600; margin-top: 3px;
+  }
+  .tag-warn { background: #fff3cd; color: #856404; }
+  .tag-ok   { background: #d4edda; color: #155724; }
+  .tag-info { background: #cce5ff; color: #004085; }
+
+  /* bottom status bar */
+  .statusbar {
+    height: 26px; background: #0d1f0d; border-top: 1px solid #1a3a1a;
+    display: flex; align-items: center; padding: 0 12px; gap: 16px;
+    flex-shrink: 0;
+  }
+  .status-item { font-size: 11px; color: #5a8a5a; }
+  .status-item b { color: #8acc8a; font-weight: 600; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #4a9a4a; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── TOP BAR ── -->
+  <div class="topbar">
+    <div class="topbar-tab active">Terrain Analysis</div>
+    <div class="topbar-tab">Elevation</div>
+    <div class="topbar-tab">Slope</div>
+    <div class="topbar-tab">Drainage</div>
+    <input class="topbar-search" placeholder="Search location or grid ref…" />
+    <div style="flex:1"></div>
+    <div class="topbar-label">DEM Resolution:</div>
+    <div class="topbar-value">10 m</div>
+    <div class="topbar-label">CRS:</div>
+    <div class="topbar-value">WGS84</div>
+    <div class="topbar-label">Vertical Datum:</div>
+    <div class="topbar-value">AHD71</div>
+    <div style="width:6px;height:6px;border-radius:50%;background:#4a9a4a;margin-left:8px"></div>
+    <div class="topbar-label" style="color:#8acc8a">Live</div>
+  </div>
+
+  <!-- ── MAIN BODY ── -->
+  <div class="body">
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="left-panel">
+
+      <!-- Elevation Profile -->
+      <div class="panel-section">
+        <div class="section-title">Elevation Profile</div>
+        <div class="elev-bar-wrap">
+          <div class="elev-bar-label"><span>Low (0–50 m)</span><span>18%</span></div>
+          <div class="elev-bar-track">
+            <div class="elev-bar-fill" style="width:18%;background:linear-gradient(90deg,#5aa0d8,#9ec8e8)"></div>
+          </div>
+        </div>
+        <div class="elev-bar-wrap">
+          <div class="elev-bar-label"><span>Mid (50–200 m)</span><span>47%</span></div>
+          <div class="elev-bar-track">
+            <div class="elev-bar-fill" style="width:47%;background:linear-gradient(90deg,#f5c96a,#e8824a)"></div>
+          </div>
+        </div>
+        <div class="elev-bar-wrap">
+          <div class="elev-bar-label"><span>High (200+ m)</span><span>35%</span></div>
+          <div class="elev-bar-track">
+            <div class="elev-bar-fill" style="width:35%;background:linear-gradient(90deg,#d4406a,#8b1c7a)"></div>
+          </div>
+        </div>
+        <div style="margin-top:6px">
+          <div class="info-row"><span>Min elevation</span><span class="info-val">12 m</span></div>
+          <div class="info-row"><span>Max elevation</span><span class="info-val">387 m</span></div>
+          <div class="info-row"><span>Mean elevation</span><span class="info-val">142 m</span></div>
+          <div class="info-row"><span>Std deviation</span><span class="info-val">±68 m</span></div>
+        </div>
+      </div>
+
+      <!-- Slope Classification -->
+      <div class="panel-section">
+        <div class="section-title">Slope Classification</div>
+        <div class="slope-row">
+          <div class="slope-dot" style="background:#4a9a4a"></div>
+          <div class="slope-label">Flat (0–2°)</div>
+          <div class="slope-pct">22%</div>
+        </div>
+        <div class="slope-row">
+          <div class="slope-dot" style="background:#a8cc44"></div>
+          <div class="slope-label">Gentle (2–5°)</div>
+          <div class="slope-pct">31%</div>
+        </div>
+        <div class="slope-row">
+          <div class="slope-dot" style="background:#f5c96a"></div>
+          <div class="slope-label">Moderate (5–15°)</div>
+          <div class="slope-pct">28%</div>
+        </div>
+        <div class="slope-row">
+          <div class="slope-dot" style="background:#e8824a"></div>
+          <div class="slope-label">Steep (15–30°)</div>
+          <div class="slope-pct">14%</div>
+        </div>
+        <div class="slope-row">
+          <div class="slope-dot" style="background:#c83030"></div>
+          <div class="slope-label">Very Steep (&gt;30°)</div>
+          <div class="slope-pct">5%</div>
+        </div>
+      </div>
+
+      <!-- Terrain Scores -->
+      <div class="panel-section">
+        <div class="section-title">Terrain Scores</div>
+        <div class="score-grid">
+          <div class="score-cell">
+            <div class="score-num" style="color:#4a9a4a">78</div>
+            <div class="score-lbl">Stability</div>
+          </div>
+          <div class="score-cell">
+            <div class="score-num" style="color:#e8824a">54</div>
+            <div class="score-lbl">Drainage</div>
+          </div>
+          <div class="score-cell">
+            <div class="score-num" style="color:#5aa0d8">82</div>
+            <div class="score-lbl">Accessibility</div>
+          </div>
+          <div class="score-cell">
+            <div class="score-num" style="color:#4a9a4a">69</div>
+            <div class="score-lbl">Aspect</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terrain Risk Score (donut) -->
+      <div class="panel-section">
+        <div class="section-title">Terrain Risk Score</div>
+        <div class="donut-wrap">
+          <div class="donut-inner">
+            <svg viewBox="0 0 64 64">
+              <!-- background ring -->
+              <circle cx="32" cy="32" r="24" fill="none" stroke="#d0ddd0" stroke-width="8"/>
+              <!-- 34% risk — stroke-dasharray = 2π×24 ≈ 150.8; 34% = 51.3 -->
+              <circle cx="32" cy="32" r="24" fill="none" stroke="#e8824a" stroke-width="8"
+                stroke-dasharray="51 100" stroke-dashoffset="37.7"
+                stroke-linecap="round" transform="rotate(-90 32 32)"/>
+            </svg>
+            <div class="donut-text">
+              <div class="donut-pct" style="color:#e8824a">34%</div>
+              <span class="donut-sub">Risk Index</span>
+            </div>
+          </div>
+        </div>
+        <div class="info-row"><span>Erosion risk</span><span class="info-val" style="color:#e8824a">Medium</span></div>
+        <div class="info-row"><span>Runoff factor</span><span class="info-val">0.62</span></div>
+        <div class="info-row"><span>Mass movement</span><span class="info-val" style="color:#4a9a4a">Low</span></div>
+      </div>
+
+      <!-- Drainage Analysis -->
+      <div class="panel-section">
+        <div class="section-title">Drainage Analysis</div>
+        <div class="info-row"><span>Catchment area</span><span class="info-val">4.8 km²</span></div>
+        <div class="info-row"><span>Flow direction</span><span class="info-val">SE</span></div>
+        <div class="info-row"><span>Basin order</span><span class="info-val">3rd</span></div>
+        <div class="info-row"><span>Sink count</span><span class="info-val">12</span></div>
+      </div>
+
+      <!-- Methodology -->
+      <div class="panel-section">
+        <div class="expand-btn">▶ Methodology &amp; Data Sources</div>
+        <div class="expand-btn">▶ Export Terrain Report</div>
+      </div>
+
+    </div><!-- /left-panel -->
+
+    <!-- ── CENTER MAP ── -->
+    <div class="map-area">
+      <img class="topo" src="Topography.jpeg" alt="Topography" />
+
+      <!-- Title badge -->
+      <div class="map-overlay-title">TOPOGRAPHIC ANALYSIS — SITE EXTENT</div>
+
+      <!-- Aspect compass -->
+      <div class="aspect-overlay">
+        <svg class="compass-svg" viewBox="0 0 52 52">
+          <circle cx="26" cy="26" r="24" fill="none" stroke="#3a6a3a" stroke-width="1"/>
+          <!-- N arrow -->
+          <polygon points="26,6 22,26 26,22 30,26" fill="#e05050"/>
+          <!-- S arrow -->
+          <polygon points="26,46 22,26 26,30 30,26" fill="#ccc"/>
+          <text x="26" y="11" text-anchor="middle" font-size="7" fill="#ffaaaa" font-weight="700">N</text>
+          <text x="26" y="48" text-anchor="middle" font-size="7" fill="#aaa">S</text>
+          <text x="8"  y="29" text-anchor="middle" font-size="7" fill="#aaa">W</text>
+          <text x="44" y="29" text-anchor="middle" font-size="7" fill="#aaa">E</text>
+          <circle cx="26" cy="26" r="3" fill="#4a9a4a"/>
+        </svg>
+      </div>
+
+      <!-- Contour gradient bar -->
+      <div class="contour-overlay">
+        <span class="contour-label">ELEVATION</span>
+        <span class="contour-min">12 m ▼</span>
+        <div class="contour-grad"></div>
+        <span class="contour-max">▲ 387 m</span>
+        <span class="contour-unit">Contour interval: 10 m · AHD71</span>
+      </div>
+
+      <!-- Scale bar -->
+      <div class="map-scale">
+        <div class="scale-bar"></div>
+        <div class="scale-label">0 &nbsp; 0.5 &nbsp; 1 km</div>
+      </div>
+    </div><!-- /map-area -->
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="right-panel">
+
+      <!-- Elevation Legend -->
+      <div class="panel-section">
+        <div class="section-title" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Elevation Legend</span>
+          <span style="font-size:8px;color:#889988;font-weight:400;letter-spacing:0">⚙</span>
+        </div>
+        <div class="elev-gradient-bar"></div>
+        <div class="elev-gradient-labels">
+          <span>Low</span><span>Mid</span><span>High</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#04104a"></div>
+          <div class="legend-text">Lowland Basin</div>
+          <div class="legend-range">0–50 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#5aa0d8"></div>
+          <div class="legend-text">Fluvial Plain</div>
+          <div class="legend-range">50–100 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#fafafa;border:1px solid #ddd"></div>
+          <div class="legend-text">Mid Plateau</div>
+          <div class="legend-range">100–200 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#f5c96a"></div>
+          <div class="legend-text">Upper Terrace</div>
+          <div class="legend-range">200–280 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#d4406a"></div>
+          <div class="legend-text">Ridge Line</div>
+          <div class="legend-range">280–340 m</div>
+        </div>
+        <div class="legend-row">
+          <div class="legend-swatch" style="background:#4a1942"></div>
+          <div class="legend-text">Peak / Summit</div>
+          <div class="legend-range">340+ m</div>
+        </div>
+      </div>
+
+      <!-- Contour Lines Legend -->
+      <div class="panel-section">
+        <div class="section-title">Contour Lines</div>
+        <div class="legend-row">
+          <svg width="16" height="14"><line x1="0" y1="7" x2="16" y2="7" stroke="#333" stroke-width="1.5"/></svg>
+          <div class="legend-text">Index contour</div>
+          <div class="legend-range">50 m</div>
+        </div>
+        <div class="legend-row">
+          <svg width="16" height="14"><line x1="0" y1="7" x2="16" y2="7" stroke="#666" stroke-width="0.8"/></svg>
+          <div class="legend-text">Intermediate</div>
+          <div class="legend-range">10 m</div>
+        </div>
+        <div class="legend-row">
+          <svg width="16" height="14"><line x1="0" y1="7" x2="16" y2="7" stroke="#5aa0d8" stroke-width="1" stroke-dasharray="3 2"/></svg>
+          <div class="legend-text">Depression</div>
+          <div class="legend-range">—</div>
+        </div>
+        <div class="legend-row">
+          <svg width="16" height="14"><line x1="0" y1="7" x2="16" y2="7" stroke="#d4406a" stroke-width="1.5" stroke-dasharray="5 2"/></svg>
+          <div class="legend-text">Ridge axis</div>
+          <div class="legend-range">—</div>
+        </div>
+      </div>
+
+      <!-- Active Layers -->
+      <div class="panel-section">
+        <div class="section-title">Active Layers</div>
+        <div class="layer-row">
+          <div class="layer-toggle"><div class="knob"></div></div>
+          <div class="layer-name">Elevation Raster</div>
+          <div class="layer-opacity">100%</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle"><div class="knob"></div></div>
+          <div class="layer-name">Contour Lines</div>
+          <div class="layer-opacity">80%</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle"><div class="knob"></div></div>
+          <div class="layer-name">Slope Overlay</div>
+          <div class="layer-opacity">60%</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle off"><div class="knob"></div></div>
+          <div class="layer-name">Hillshade</div>
+          <div class="layer-opacity">—</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle off"><div class="knob"></div></div>
+          <div class="layer-name">Flow Accumulation</div>
+          <div class="layer-opacity">—</div>
+        </div>
+        <div class="layer-row">
+          <div class="layer-toggle off"><div class="knob"></div></div>
+          <div class="layer-name">Watershed Boundary</div>
+          <div class="layer-opacity">—</div>
+        </div>
+        <div style="margin-top:5px">
+          <div style="font-size:8px;color:#4a9a4a;cursor:pointer">+ Add Layer</div>
+        </div>
+      </div>
+
+      <!-- Terrain Insights -->
+      <div class="panel-section">
+        <div class="section-title">Terrain Insights</div>
+        <div class="insights-item">
+          <div class="insights-head">Dominant drainage SE</div>
+          <div class="insights-body">Primary flow paths converge in southeast basin. Check culvert sizing for haul road crossings.</div>
+          <span class="tag tag-warn">Check Required</span>
+        </div>
+        <div class="insights-item">
+          <div class="insights-head">Stable plateau found</div>
+          <div class="insights-body">140–180 m band shows &lt;3° slope over 1.2 km². Suitable for infrastructure footprint.</div>
+          <span class="tag tag-ok">Buildable Zone</span>
+        </div>
+        <div class="insights-item">
+          <div class="insights-head">Two depression sinks</div>
+          <div class="insights-body">DEM depressions at grid N7 and K12 may indicate data voids or natural sumps.</div>
+          <span class="tag tag-info">Verify Field</span>
+        </div>
+      </div>
+
+      <!-- Base Map -->
+      <div class="panel-section">
+        <div class="section-title">Base Map</div>
+        <div class="basemap-thumbs">
+          <div style="text-align:center">
+            <div class="basemap-thumb active" style="background:linear-gradient(135deg,#9ec8e8,#f5c96a,#d4406a)"></div>
+            <div class="basemap-thumb-label">Terrain</div>
+          </div>
+          <div style="text-align:center">
+            <div class="basemap-thumb" style="background:#1a1a2e"></div>
+            <div class="basemap-thumb-label">Dark</div>
+          </div>
+          <div style="text-align:center">
+            <div class="basemap-thumb" style="background:linear-gradient(135deg,#b0d0b0,#8aaa8a)"></div>
+            <div class="basemap-thumb-label">Satellite</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /right-panel -->
+
+  </div><!-- /body -->
+
+  <!-- ── STATUS BAR ── -->
+  <div class="statusbar">
+    <div class="status-dot"></div>
+    <div class="status-item">DEM: <b>SRTM-1 Arc-sec v3.0</b></div>
+    <div class="status-item">Cursor: <b>23°41′28″S  147°22′09″E</b></div>
+    <div class="status-item">Elevation at cursor: <b>168 m AHD</b></div>
+    <div class="status-item">Slope: <b>4.2°</b></div>
+    <div class="status-item">Aspect: <b>128° SE</b></div>
+    <div style="flex:1"></div>
+    <div class="status-item">Zoom: <b>1:25 000</b></div>
+    <div class="status-item">Tiles loaded: <b>48 / 48</b></div>
+  </div>
+
+</div><!-- /app -->
+</body>
+</html>
