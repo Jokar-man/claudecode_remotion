@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>SiteSense — Data Centre Feasibility</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#F5F7F5; --surface:#FFFFFF; --border:#E0E0E0; --border2:#CCCCCC;
+  --green:#2E7D32; --green-lt:#E8F5E9; --green-dk:#1B5E20;
+  --amber:#e65100; --red:#c62828;
+  --txt:#333333; --txt2:#666666; --txt3:#999999;
+  --shadow:0 2px 10px rgba(0,0,0,.15);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;
+  font-family:'Roboto',sans-serif;color:var(--txt);}
+.app{width:1918px;height:1078px;display:flex;overflow:hidden;transform-origin:top left;}
+
+/* ═══════════════════════════════════════════
+   SIDEBAR  240px  DBF light theme
+   ═══════════════════════════════════════════ */
+.sidebar{
+  width:240px;height:100%;background:var(--bg);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;
+}
+
+/* Logo bar */
+.logo-bar{
+  height:56px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;
+}
+.hamburger{width:24px;display:flex;flex-direction:column;gap:5px;cursor:pointer;}
+.hamburger span{height:2.5px;background:var(--txt3);border-radius:1px;display:block;}
+.logo-icon{
+  width:34px;height:34px;border-radius:7px;
+  background:linear-gradient(135deg,var(--green),#1B5E20);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;flex-shrink:0;
+}
+.logo-name{font-size:16px;font-weight:700;color:var(--green);}
+.logo-sub{font-size:10px;color:var(--txt3);}
+
+/* Filters */
+.sb-filters{padding:12px 14px;flex-shrink:0;}
+.sb-sec-lbl{
+  font-size:11px;font-weight:600;color:var(--txt3);
+  letter-spacing:.08em;text-transform:uppercase;margin-bottom:7px;
+}
+.dropdown{
+  background:var(--surface);border:1px solid var(--border2);border-radius:5px;
+  padding:7px 11px;display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:6px;cursor:pointer;
+}
+.dropdown:hover{border-color:#BDBDBD;}
+.dd-lbl{font-size:12px;color:var(--txt3);}
+.dd-val{font-size:13px;color:var(--txt);font-weight:500;}
+.dd-arr{font-size:11px;color:var(--txt3);}
+.dd-row{display:flex;gap:6px;margin-bottom:6px;}
+.dd-add{
+  width:36px;height:36px;border:1px solid var(--border2);border-radius:5px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;color:var(--txt3);cursor:pointer;background:var(--surface);flex-shrink:0;
+}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;}
+.chip{
+  display:inline-flex;align-items:center;gap:5px;padding:5px 12px;
+  border-radius:20px;font-size:12px;cursor:pointer;
+}
+.chip.active{background:var(--green-lt);border:1.5px solid var(--green);
+  color:var(--green);font-weight:500;}
+.chip.plain{background:#fff;border:1.5px solid var(--border2);color:var(--txt2);}
+
+/* Score grid */
+.sb-score-bar{
+  padding:8px 14px;background:var(--surface);
+  border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  font-size:12px;font-weight:600;color:var(--txt2);flex-shrink:0;
+  letter-spacing:.04em;text-transform:uppercase;
+}
+.score-scroll{flex:1;overflow-y:auto;padding:10px 12px;}
+.score-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:7px;
+}
+.sbox{
+  border:2px solid var(--border);border-radius:6px;background:var(--surface);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:7px 4px;cursor:pointer;min-height:70px;
+}
+.sbox.g{border-color:var(--green);background:var(--green-lt);}
+.sbox.a{border-color:#EF6C00;background:#FFF3E0;}
+.sbox.r{border-color:#C62828;background:#FFEBEE;}
+.sbox-ic{font-size:20px;margin-bottom:3px;line-height:1;}
+.sbox-nm{font-size:9px;color:var(--txt3);text-align:center;line-height:1.2;margin-bottom:3px;}
+.sbox-vl{font-size:15px;font-weight:700;font-family:'Roboto Mono',monospace;}
+.sbox.g .sbox-vl{color:var(--green);}
+.sbox.a .sbox-vl{color:#BF360C;}
+.sbox.r .sbox-vl{color:var(--red);}
+
+/* Overall score */
+.overall{
+  flex-shrink:0;padding:12px 14px;
+  background:var(--surface);border-top:1px solid var(--border);
+}
+.overall-lbl{font-size:11px;font-weight:700;color:var(--txt3);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;}
+.overall-row{display:flex;align-items:flex-end;justify-content:space-between;}
+.overall-val{font-size:28px;font-weight:700;color:var(--green);
+  font-family:'Roboto Mono',monospace;line-height:1;}
+.overall-den{font-size:14px;color:var(--txt3);font-family:'Roboto Mono',monospace;}
+.overall-sub{font-size:10px;color:var(--txt3);margin-top:3px;}
+.verdict-tag{
+  padding:4px 12px;border-radius:20px;background:var(--green-lt);
+  border:1px solid rgba(46,125,50,.35);
+  font-size:11px;font-weight:500;color:var(--green);
+}
+
+/* Footer */
+.sb-footer{
+  height:42px;background:var(--surface);border-top:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;
+}
+.ft-ic{font-size:18px;color:var(--txt3);}
+.ft-lbl{font-size:12px;color:var(--txt3);}
+.ft-right{margin-left:auto;font-size:20px;color:var(--txt3);cursor:pointer;}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#BDBDBD;border-radius:2px;}
+
+/* ═══════════════════════════════════════════
+   MAP AREA  (1678×1078)
+   ═══════════════════════════════════════════ */
+.map-area{
+  flex:1;position:relative;overflow:hidden;background:#8ba4b2;
+}
+
+/* Satellite: object-fit cover → fills map fully, no letterbox
+   JPG 8000×4186 | Map 1678×1078
+   cover scale = max(1678/8000, 1078/4186) = 0.25753 (height wins)
+   rendered = 2060×1078, crop x = (2060-1678)/2 = 191px each side */
+.sat{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center center;display:block;
+}
+
+/* Infrastructure overlay SVG
+   Coordinate system: map area pixels (1678×1078)
+   Derived from Datacenter.svg (viewBox 1920×1080):
+     map_x = svg_x * 1.073 - 191
+     map_y = svg_y * 0.998 ≈ svg_y                   */
+.infra{
+  position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+}
+
+/* Radar wrap
+   Green circle in SVG: cx=990.78, cy=428.63, r=317.11
+   In map: cx=872, cy=428, r≈328
+   R_IN=328 (green circle edge), R_MAX=428 → cap at 350 to keep inside map
+   Using R_MAX=350: wrap 700×700 at left=872-350=522, top=428-350=78            */
+.radar-wrap{
+  position:absolute;left:522px;top:78px;
+  width:700px;height:700px;pointer-events:none;
+}
+.radar-wrap svg{width:100%;height:100%;}
+
+/* Floating legend card */
+.legend-card{
+  position:absolute;top:28px;left:22px;
+  background:#fff;border-radius:7px;box-shadow:var(--shadow);
+  border:1px solid var(--border);overflow:hidden;min-width:200px;
+}
+.lc-hdr{
+  background:var(--green-lt);padding:9px 13px;
+  font-size:14px;font-weight:600;color:var(--green-dk);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.lc-body{padding:9px 13px;display:flex;flex-direction:column;gap:6px;}
+.lc-row{display:flex;align-items:center;gap:9px;}
+.lc-sym{width:28px;flex-shrink:0;}
+.lc-name{font-size:11px;color:var(--txt2);}
+
+/* Map annotation badges */
+.badge{
+  position:absolute;background:rgba(255,255,255,.92);
+  border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,.2);
+  padding:4px 10px;pointer-events:none;
+  display:flex;align-items:center;gap:6px;
+}
+.badge-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.badge-txt{font-size:11px;font-weight:500;color:#333;}
+
+/* Scale bar */
+.scale-bar{
+  position:absolute;bottom:16px;right:18px;
+  background:rgba(255,255,255,.88);border-radius:5px;
+  padding:5px 11px;border:1px solid rgba(0,0,0,.12);
+}
+.scale-inner{display:flex;align-items:center;gap:5px;margin-bottom:2px;}
+.scale-line{height:3px;width:44px;background:#555;border-radius:1px;
+  border-left:2px solid #555;border-right:2px solid #555;}
+.scale-txt{font-size:10px;color:#555;}
+.scale-copy{font-size:8px;color:#999;}
+
+/* search bar */
+.search-bar{
+  position:absolute;bottom:18px;left:50%;transform:translateX(-50%);
+  background:#fff;border-radius:24px;box-shadow:0 2px 8px rgba(0,0,0,.2);
+  border:1px solid var(--border);padding:8px 24px;
+  font-size:13px;font-weight:500;color:var(--txt2);cursor:pointer;
+  display:flex;align-items:center;gap:8px;
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ════════════════════════════════════
+     SIDEBAR
+════════════════════════════════════ -->
+<div class="sidebar">
+
+  <div class="logo-bar">
+    <div class="hamburger">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="logo-icon">SS</div>
+    <div>
+      <div class="logo-name">SiteSense</div>
+      <div class="logo-sub">Feasibility Platform</div>
+    </div>
+  </div>
+
+  <div class="sb-filters">
+    <div class="sb-sec-lbl">Site Parameters</div>
+
+    <div class="dropdown">
+      <span class="dd-lbl">Region</span>
+      <span class="dd-val">Melbourne VIC</span>
+      <span class="dd-arr">▾</span>
+    </div>
+
+    <div class="dd-row">
+      <div class="dropdown" style="flex:1;margin-bottom:0">
+        <span class="dd-lbl">Precinct</span>
+        <span class="dd-val">Industrial 7</span>
+      </div>
+      <div class="dd-add">+</div>
+    </div>
+
+    <div style="height:6px"></div>
+    <div class="dropdown">
+      <span class="dd-lbl">Site Type</span>
+      <span class="dd-val">Data Centre</span>
+      <span class="dd-arr">▾</span>
+    </div>
+
+    <div style="height:7px"></div>
+    <div class="chip-row">
+      <div class="chip active">🏭 Industrial</div>
+      <div class="chip plain">🏢 Commercial</div>
+    </div>
+  </div>
+
+  <div class="sb-score-bar">Feasibility Scores</div>
+
+  <div class="score-scroll">
+    <div class="score-grid">
+
+      <div class="sbox g">
+        <div class="sbox-ic">🗺️</div>
+        <div class="sbox-nm">Land Plot</div>
+        <div class="sbox-vl">85</div>
+      </div>
+      <div class="sbox a">
+        <div class="sbox-ic">⛰️</div>
+        <div class="sbox-nm">Topography</div>
+        <div class="sbox-vl">78</div>
+      </div>
+      <div class="sbox g">
+        <div class="sbox-ic">📋</div>
+        <div class="sbox-nm">Zoning</div>
+        <div class="sbox-vl">88</div>
+      </div>
+
+      <div class="sbox g">
+        <div class="sbox-ic">🛣️</div>
+        <div class="sbox-nm">Roads</div>
+        <div class="sbox-vl">90</div>
+      </div>
+      <div class="sbox a">
+        <div class="sbox-ic">💧</div>
+        <div class="sbox-nm">Water Bodies</div>
+        <div class="sbox-vl">60</div>
+      </div>
+      <div class="sbox r">
+        <div class="sbox-ic">🌊</div>
+        <div class="sbox-nm">Flood Plains</div>
+        <div class="sbox-vl">42</div>
+      </div>
+
+      <div class="sbox a">
+        <div class="sbox-ic">🌿</div>
+        <div class="sbox-nm">Wetlands</div>
+        <div class="sbox-vl">65</div>
+      </div>
+      <div class="sbox a">
+        <div class="sbox-ic">🌧️</div>
+        <div class="sbox-nm">Stormwater</div>
+        <div class="sbox-vl">71</div>
+      </div>
+      <div class="sbox a">
+        <div class="sbox-ic">⚠️</div>
+        <div class="sbox-nm">Easements</div>
+        <div class="sbox-vl">55</div>
+      </div>
+
+      <div class="sbox g">
+        <div class="sbox-ic">⚡</div>
+        <div class="sbox-nm">Power Grid</div>
+        <div class="sbox-vl">92</div>
+      </div>
+      <div class="sbox g">
+        <div class="sbox-ic">🚰</div>
+        <div class="sbox-nm">Water Supply</div>
+        <div class="sbox-vl">88</div>
+      </div>
+      <div class="sbox g">
+        <div class="sbox-ic">📡</div>
+        <div class="sbox-nm">Fibre Optics</div>
+        <div class="sbox-vl">95</div>
+      </div>
+
+      <div class="sbox r">
+        <div class="sbox-ic">🔥</div>
+        <div class="sbox-nm">Gas Supply</div>
+        <div class="sbox-vl">40</div>
+      </div>
+      <div></div><div></div>
+
+    </div>
+  </div><!-- /score-scroll -->
+
+  <div class="overall">
+    <div class="overall-lbl">Overall Score</div>
+    <div class="overall-row">
+      <div>
+        <div>
+          <span class="overall-val">74</span>
+          <span class="overall-den"> / 100</span>
+        </div>
+        <div class="overall-sub">Conditionally Feasible — Lot 190</div>
+      </div>
+      <div class="verdict-tag">Lot 190</div>
+    </div>
+  </div>
+
+  <div class="sb-footer">
+    <span class="ft-ic">🔖</span>
+    <span class="ft-lbl">Save Analysis</span>
+    <span class="ft-right">⋯</span>
+  </div>
+
+</div><!-- /sidebar -->
+
+<!-- ════════════════════════════════════
+     MAP AREA
+════════════════════════════════════ -->
+<div class="map-area">
+
+  <!-- Satellite background: fills map with no letterbox -->
+  <img class="sat" src="Datacenter_site-01.jpg" alt="Satellite"/>
+
+  <!-- ── Infrastructure overlay SVG ──
+       All coords derived from Datacenter.svg (1920×1080 viewBox)
+       map_x = svg_x * 1.073 - 191
+       map_y = svg_y * 0.998 ≈ svg_y
+
+       CLASSES from SVG:
+         st1 black roads  (#000, stroke-width 6)
+         st2 red site boundary (#FF0000, w=4)
+         st3 orange power line (#F7931E, w=6)
+         st4 blue water supply (#0000FF, w=6)
+         st5 green dashed circle (#7AC943, w=6, dash=12)              -->
+  <svg class="infra" viewBox="0 0 1678 1078" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Glow for site boundary -->
+      <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="3" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <!-- Power tower marker -->
+      <marker id="tower" markerWidth="14" markerHeight="14" refX="7" refY="7" orient="auto-start-reverse">
+        <line x1="7" y1="0" x2="3" y2="8" stroke="#F7931E" stroke-width="1.5"/>
+        <line x1="7" y1="0" x2="11" y2="8" stroke="#F7931E" stroke-width="1.5"/>
+        <line x1="2" y1="5" x2="12" y2="5" stroke="#F7931E" stroke-width="1.5"/>
+        <line x1="4.5" y1="5" x2="4.5" y2="0" stroke="#F7931E" stroke-width="1"/>
+        <line x1="9.5" y1="5" x2="9.5" y2="0" stroke="#F7931E" stroke-width="1"/>
+      </marker>
+      <!-- Water drop marker -->
+      <marker id="drop" markerWidth="10" markerHeight="10" refX="5" refY="5">
+        <circle cx="5" cy="5" r="3" fill="#1565C0" opacity="0.8"/>
+      </marker>
+    </defs>
+
+    <!-- ── Site boundary (red dashed polygon)
+         SVG vertices → map: svg_x*1.073-191, svg_y*0.998           -->
+    <polygon
+      points="
+        600,360  692,390  736,390  758,401  952,414
+        1040,409 1065,398 1094,372 1128,353
+        1040,310 1007,321 978,313  961,302
+        966,262  975,242  1013,218 1057,211 1065,205
+        1033,175 1011,175 876,159
+        844,228  810,252  777,238
+        695,282  664,309  612,320"
+      fill="rgba(220,38,38,0.06)"
+      stroke="#DC2626" stroke-width="2.5"
+      stroke-dasharray="11 5"
+      filter="url(#glow)"/>
+
+    <!-- ── Power line (orange, 132kV)
+         SVG polyline st3: 1326.28,0 → 1384.49,132.66 → 1442.7,267.47 → 1549.94,371.64 → 1666.36,448.23
+         map: 1231,0 → 1293,133 → 1357,267 → 1470,372 → 1596,448                                 -->
+    <polyline
+      points="1231,0 1293,133 1357,267 1470,372 1596,448"
+      fill="none" stroke="#F7931E" stroke-width="3"
+      stroke-dasharray="16 8" stroke-linecap="round"/>
+    <!-- Tower symbols at each vertex -->
+    <g stroke="#F7931E" stroke-width="1.8" fill="none" opacity="0.9">
+      <g transform="translate(1231,0)">
+        <line x1="-7" y1="-9" x2="0" y2="0"/><line x1="7" y1="-9" x2="0" y2="0"/>
+        <line x1="-9" y1="-5" x2="9" y2="-5"/>
+        <line x1="-4.5" y1="-5" x2="-4.5" y2="-9"/><line x1="4.5" y1="-5" x2="4.5" y2="-9"/>
+      </g>
+      <g transform="translate(1293,133)">
+        <line x1="-7" y1="-9" x2="0" y2="0"/><line x1="7" y1="-9" x2="0" y2="0"/>
+        <line x1="-9" y1="-5" x2="9" y2="-5"/>
+        <line x1="-4.5" y1="-5" x2="-4.5" y2="-9"/><line x1="4.5" y1="-5" x2="4.5" y2="-9"/>
+      </g>
+      <g transform="translate(1357,267)">
+        <line x1="-7" y1="-9" x2="0" y2="0"/><line x1="7" y1="-9" x2="0" y2="0"/>
+        <line x1="-9" y1="-5" x2="9" y2="-5"/>
+        <line x1="-4.5" y1="-5" x2="-4.5" y2="-9"/><line x1="4.5" y1="-5" x2="4.5" y2="-9"/>
+      </g>
+      <g transform="translate(1470,372)">
+        <line x1="-7" y1="-9" x2="0" y2="0"/><line x1="7" y1="-9" x2="0" y2="0"/>
+        <line x1="-9" y1="-5" x2="9" y2="-5"/>
+        <line x1="-4.5" y1="-5" x2="-4.5" y2="-9"/><line x1="4.5" y1="-5" x2="4.5" y2="-9"/>
+      </g>
+    </g>
+
+    <!-- ── Water supply main (blue)
+         SVG polyline st4: 1278.79,-6.74 → 1326.28,92.83 → 1397.51,244.49 → 1433.51,323.38 → 1526.96,397.68 → 1635.72,468.15
+         map: 1181,-7 → 1231,93 → 1308,244 → 1347,323 → 1448,398 → 1564,468              -->
+    <polyline
+      points="1181,-7 1231,93 1308,244 1347,323 1448,398 1564,468"
+      fill="none" stroke="#1565C0" stroke-width="3.5"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Wave decorations on water line -->
+    <g fill="none" stroke="#1565C0" stroke-width="1.2" opacity="0.55">
+      <path d="M1246,60 Q1251,54 1256,60 Q1261,66 1266,60"/>
+      <path d="M1318,215 Q1323,209 1328,215 Q1333,221 1338,215"/>
+      <path d="M1360,300 Q1365,294 1370,300 Q1375,306 1380,300"/>
+      <path d="M1460,375 Q1465,369 1470,375 Q1475,381 1480,375"/>
+    </g>
+
+    <!-- ── Roads (black)
+         SVG polyline st1 #1: 1405.94,223 → 1441.17,304 → 1520.83,372 → 1638.79,451
+         map: 1318,223 → 1356,304 → 1441,372 → 1567,451                               -->
+    <!-- Road 1: main diagonal road (upper right) -->
+    <polyline
+      points="1318,223 1356,304 1441,372 1567,451"
+      fill="none" stroke="#333" stroke-width="5" stroke-opacity="0.7"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline
+      points="1318,223 1356,304 1441,372 1567,451"
+      fill="none" stroke="#ddd" stroke-width="1.5" stroke-opacity="0.6"
+      stroke-dasharray="22 8" stroke-linecap="round"/>
+
+    <!-- Road 2: complex road south
+         SVG: 1520.83,372 → 1513.17,453 → 1497.85,497 → 1459.55,523 → 1433.51,755 → 1508.57,827 → 1508.57,934
+         map: 1441,372 → 1432,453 → 1415,497 → 1376,523 → 1347,755 → 1428,827 → 1428,934       -->
+    <polyline
+      points="1441,372 1432,453 1415,497 1376,523 1347,755 1428,827 1428,934"
+      fill="none" stroke="#333" stroke-width="5" stroke-opacity="0.7"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline
+      points="1441,372 1432,453 1415,497 1376,523 1347,755 1428,827 1428,934"
+      fill="none" stroke="#ddd" stroke-width="1.5" stroke-opacity="0.6"
+      stroke-dasharray="22 8" stroke-linecap="round"/>
+
+    <!-- Road 3: south-east branch
+         SVG: 1658.7,767 → 1618.87,727 → 1666.36,523 → 1549.94,473 → 1563.79,401
+         map: 1589,767 → 1547,727 → 1597,523 → 1472,473 → 1486,401                    -->
+    <polyline
+      points="1589,767 1547,727 1597,523 1472,473 1486,401"
+      fill="none" stroke="#333" stroke-width="5" stroke-opacity="0.7"
+      stroke-linecap="round" stroke-linejoin="round"/>
+    <polyline
+      points="1589,767 1547,727 1597,523 1472,473 1486,401"
+      fill="none" stroke="#ddd" stroke-width="1.5" stroke-opacity="0.6"
+      stroke-dasharray="22 8" stroke-linecap="round"/>
+
+    <!-- ── Green analysis circle (dashed, matches Datacenter.svg st5)
+         SVG circle: cx=990.78, cy=428.63, r=317.11
+         map: cx=872, cy=429, r_x=340 r_y=317 (ellipse due to non-uniform scale)  -->
+    <ellipse cx="872" cy="429" rx="340" ry="317"
+      fill="none" stroke="#7AC943" stroke-width="2.5"
+      stroke-dasharray="12 12" stroke-opacity="0.7"/>
+  </svg>
+
+  <!-- ── Radar chart (rainbow bars radiating OUTSIDE the green ellipse)
+       SVG wrap: 700×700 centred at map (872,429)
+       R_IN=328 (avg green ellipse radius), R_MAX=428 → use 350 to stay in map bounds
+       left=872-350=522, top=429-350=79                                              -->
+  <div class="radar-wrap">
+    <svg viewBox="-350 -350 700 700" xmlns="http://www.w3.org/2000/svg">
+      <!-- Ghost outer reference -->
+      <circle r="350" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="0.5"/>
+      <!-- Green circle inner boundary echo -->
+      <circle r="328" fill="rgba(255,255,255,0.03)" stroke="rgba(122,201,67,0.3)"
+              stroke-dasharray="10 8" stroke-width="1.5"/>
+      <!-- Rainbow bars from JS -->
+      <g id="bars"></g>
+      <!-- Centre score -->
+      <circle r="52" fill="rgba(255,255,255,0.9)" stroke="rgba(46,125,50,0.5)" stroke-width="2"/>
+      <text y="8" text-anchor="middle" font-size="32" font-weight="700"
+            fill="#2E7D32" font-family="Roboto Mono,monospace">74</text>
+      <text y="24" text-anchor="middle" font-size="9"
+            fill="#999" font-family="Roboto,sans-serif" letter-spacing="1.5">SCORE</text>
+    </svg>
+  </div>
+
+  <!-- Floating legend card -->
+  <div class="legend-card">
+    <div class="lc-hdr">
+      Feasibility Layers
+      <span style="font-size:12px;cursor:pointer;color:#999;">✕</span>
+    </div>
+    <div class="lc-body">
+      <div class="lc-row">
+        <svg class="lc-sym" height="14" viewBox="0 0 28 14">
+          <rect x="1" y="2" width="26" height="10" fill="rgba(220,38,38,.1)"
+                stroke="#DC2626" stroke-width="1.5" stroke-dasharray="6 3" rx="1"/>
+        </svg>
+        <span class="lc-name">Site Boundary</span>
+      </div>
+      <div class="lc-row">
+        <svg class="lc-sym" height="14" viewBox="0 0 28 14">
+          <line x1="0" y1="7" x2="28" y2="7" stroke="#F7931E" stroke-width="2.5" stroke-dasharray="8 4"/>
+          <path d="M12,1 L14,7 L16,1 L14,4Z" stroke="#F7931E" stroke-width="1" fill="none"/>
+        </svg>
+        <span class="lc-name">Power Line (132kV)</span>
+      </div>
+      <div class="lc-row">
+        <svg class="lc-sym" height="14" viewBox="0 0 28 14">
+          <line x1="0" y1="7" x2="28" y2="7" stroke="#1565C0" stroke-width="2.5"/>
+          <circle cx="7" cy="7" r="2.5" fill="#1565C0" opacity="0.6"/>
+          <circle cx="21" cy="7" r="2.5" fill="#1565C0" opacity="0.6"/>
+        </svg>
+        <span class="lc-name">Water Supply Main</span>
+      </div>
+      <div class="lc-row">
+        <svg class="lc-sym" height="14" viewBox="0 0 28 14">
+          <line x1="0" y1="5" x2="28" y2="5" stroke="#444" stroke-width="2"/>
+          <line x1="0" y1="9" x2="28" y2="9" stroke="#444" stroke-width="2"/>
+        </svg>
+        <span class="lc-name">Access Roads</span>
+      </div>
+      <div class="lc-row">
+        <svg class="lc-sym" height="14" viewBox="0 0 28 14">
+          <ellipse cx="14" cy="7" rx="12" ry="5" fill="none"
+                   stroke="#7AC943" stroke-width="1.5" stroke-dasharray="4 3"/>
+        </svg>
+        <span class="lc-name">Analysis Zone</span>
+      </div>
+      <div style="border-top:1px solid #eee;margin:3px 0;"></div>
+      <!-- Dataset colors -->
+      <div class="lc-row"><div class="lc-sym" style="width:10px;height:10px;border-radius:50%;background:#06b6d4;flex-shrink:0;margin-right:8px;"></div><span class="lc-name">Land Plot Data</span></div>
+      <div class="lc-row"><div class="lc-sym" style="width:10px;height:10px;border-radius:50%;background:#4f46e5;flex-shrink:0;margin-right:8px;"></div><span class="lc-name">Flood Plains</span></div>
+      <div class="lc-row"><div class="lc-sym" style="width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0;margin-right:8px;"></div><span class="lc-name">Power Availability</span></div>
+      <div class="lc-row"><div class="lc-sym" style="width:10px;height:10px;border-radius:50%;background:#eab308;flex-shrink:0;margin-right:8px;"></div><span class="lc-name">Zoning / Bylaws</span></div>
+      <div class="lc-row"><div class="lc-sym" style="width:10px;height:10px;border-radius:50%;background:#7c3aed;flex-shrink:0;margin-right:8px;"></div><span class="lc-name">Wetlands</span></div>
+      <div class="lc-row"><div class="lc-sym" style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0;margin-right:8px;"></div><span class="lc-name">Water Supply</span></div>
+    </div>
+  </div>
+
+  <!-- Map annotation badges -->
+  <div class="badge" style="left:1240px;top:90px;">
+    <div class="badge-dot" style="background:#F7931E"></div>
+    <span class="badge-txt">132kV Power Line</span>
+  </div>
+  <div class="badge" style="left:1200px;top:130px;">
+    <div class="badge-dot" style="background:#1565C0"></div>
+    <span class="badge-txt">Water Supply Main</span>
+  </div>
+  <div class="badge" style="left:840px;top:145px;">
+    <div class="badge-dot" style="background:#DC2626"></div>
+    <span class="badge-txt">Lot 190 — Industrial Precinct 7</span>
+  </div>
+  <div class="badge" style="left:1370px;top:360px;">
+    <div class="badge-dot" style="background:#444"></div>
+    <span class="badge-txt">City Infrastructure</span>
+  </div>
+  <div class="badge" style="left:1390px;top:500px;">
+    <div class="badge-dot" style="background:#2E7D32"></div>
+    <span class="badge-txt">Power Availability ✓</span>
+  </div>
+
+  <!-- Scale bar -->
+  <div class="scale-bar">
+    <div class="scale-inner">
+      <div class="scale-line"></div>
+      <span class="scale-txt">500 m</span>
+    </div>
+    <div class="scale-copy">© Mapbox  © OpenStreetMap</div>
+  </div>
+
+  <!-- Search bar (DBF style) -->
+  <div class="search-bar">
+    🔍 Search location or address
+  </div>
+
+</div><!-- /map-area -->
+</div><!-- /app -->
+
+<script>
+/* ── Auto-scale ── */
+function scaleApp(){
+  const app=document.getElementById('app');
+  const sx=window.innerWidth/1918, sy=window.innerHeight/1078;
+  const s=Math.min(sx,sy);
+  app.style.transform=`scale(${s})`;
+  app.style.marginLeft=((window.innerWidth-1918*s)/2)+'px';
+  app.style.marginTop=((window.innerHeight-1078*s)/2)+'px';
+}
+scaleApp();
+window.addEventListener('resize',scaleApp);
+
+/* ── Rainbow radial bar chart ──
+   Bars radiate OUTWARD from the green analysis circle.
+   R_IN  = 328  (inner edge = green ellipse average radius)
+   R_MAX = 428  → capped at 350 to keep inside map safe zone
+   13 bars in full rainbow clockwise spectrum                   */
+const DS=[
+  {s:85, c:'#06b6d4'},{s:78, c:'#0ea5e9'},{s:60, c:'#3b82f6'},
+  {s:42, c:'#4f46e5'},{s:65, c:'#7c3aed'},{s:71, c:'#a21caf'},
+  {s:55, c:'#ef4444'},{s:90, c:'#f97316'},{s:88, c:'#eab308'},
+  {s:92, c:'#84cc16'},{s:88, c:'#22c55e'},{s:95, c:'#10b981'},
+  {s:40, c:'#14b8a6'},
+];
+const NS='http://www.w3.org/2000/svg';
+const N=DS.length, GAP=4, DEG=360/N;
+const R_IN=328, R_MAX=350;
+const g=document.getElementById('bars');
+
+function p2c(r,d){
+  const a=(d-90)*Math.PI/180;
+  return{x:+(r*Math.cos(a)).toFixed(2),y:+(r*Math.sin(a)).toFixed(2)};
+}
+function arc(s,e,ri,ro){
+  const A=p2c(ri,s),B=p2c(ri,e),C=p2c(ro,e),D=p2c(ro,s);
+  const lf=(e-s)>180?1:0;
+  return`M${A.x},${A.y} A${ri},${ri},0,${lf},1,${B.x},${B.y}`+
+        ` L${C.x},${C.y} A${ro},${ro},0,${lf},0,${D.x},${D.y} Z`;
+}
+
+DS.forEach((d,i)=>{
+  const sd=i*DEG+GAP/2, ed=(i+1)*DEG-GAP/2;
+  const ro=R_IN+(d.s/100)*(R_MAX-R_IN);
+  const mid=(sd+ed)/2;
+
+  /* ghost track */
+  const tk=document.createElementNS(NS,'path');
+  tk.setAttribute('d',arc(sd,ed,R_IN,R_MAX));
+  tk.setAttribute('fill','rgba(0,0,0,0.07)');
+  g.appendChild(tk);
+
+  /* bar */
+  if(ro>R_IN+2){
+    const bar=document.createElementNS(NS,'path');
+    bar.setAttribute('d',arc(sd,ed,R_IN,ro));
+    bar.setAttribute('fill',d.c);
+    bar.setAttribute('fill-opacity','0.88');
+    bar.setAttribute('stroke','rgba(255,255,255,0.6)');
+    bar.setAttribute('stroke-width','1.2');
+    g.appendChild(bar);
+
+    /* score tip label */
+    const tp=p2c(ro+16,mid);
+    const t=document.createElementNS(NS,'text');
+    t.setAttribute('x',tp.x); t.setAttribute('y',tp.y);
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('dominant-baseline','middle');
+    t.setAttribute('font-size','10');
+    t.setAttribute('font-family','Roboto Mono,monospace');
+    t.setAttribute('font-weight','700');
+    t.setAttribute('fill',d.c);
+    t.textContent=d.s;
+    g.appendChild(t);
+  }
+});
+</script>
+</body>
+</html>
