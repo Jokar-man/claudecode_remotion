@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>URBNDXB — 20 Min City</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Roboto', sans-serif;
+      background: #111;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      color: #333;
+    }
+
+    /* ── Left panel (tab + content as one unit) ── */
+    .left-panel {
+      display: flex;
+      background: #fff;
+      border-right: 1px solid #ddd;
+      flex-shrink: 0;
+    }
+
+    /* ── Vertical green tab ── */
+    .side-tab {
+      width: 48px;
+      min-width: 48px;
+      background: #2E7D32;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 16px;
+      gap: 10px;
+      color: #fff;
+      cursor: pointer;
+    }
+    .side-tab-icon { display: flex; align-items: center; justify-content: center; }
+    .side-tab-label {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #fff;
+    }
+
+    .panel-content {
+      width: 460px;
+      overflow-y: auto;
+      padding: 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .panel-content::-webkit-scrollbar { width: 4px; }
+    .panel-content::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+    /* ── Filters row ── */
+    .filters-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .filters-title { font-size: 14px; font-weight: 500; color: #333; }
+    .btn-row { display: flex; gap: 8px; }
+    .btn-drop-pin {
+      background: #2E7D32; color: #fff; border: none;
+      padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+    }
+    .btn-reset {
+      background: #e0e0e0; color: #333; border: none;
+      padding: 7px 20px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+    }
+
+    /* ── Travel mode / time ── */
+    .travel-row { display: flex; gap: 40px; align-items: flex-start; }
+    .travel-group { display: flex; flex-direction: column; gap: 6px; }
+    .travel-label { font-size: 12px; color: #555; }
+    .btn-strip { display: flex; border-radius: 6px; overflow: hidden; border: 1.5px solid #C8C8C8; }
+    .strip-btn {
+      padding: 7px 22px; border: none; background: #fff;
+      font-size: 13px; font-weight: 500; color: #333; cursor: pointer; transition: all 0.12s;
+    }
+    .strip-btn + .strip-btn { border-left: 1.5px solid #C8C8C8; }
+    .strip-btn.active { background: #2E7D32; color: #fff; }
+
+    /* ── Persona ── */
+    .persona-label { font-size: 12px; color: #555; margin-bottom: 8px; }
+    .persona-row { display: flex; gap: 10px; }
+    .persona-btn {
+      flex: 1;
+      min-height: 100px;
+      padding: 12px 8px 10px;
+      border: 1.5px solid #C8C8C8; border-radius: 8px;
+      background: #fff; font-size: 12px; color: #333;
+      cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+      transition: all 0.12s;
+    }
+    .persona-btn.active { border-color: #2E7D32; background: #2E7D32; color: #fff; }
+    .persona-btn.active svg path, .persona-btn.active svg rect, .persona-btn.active svg circle,
+    .persona-btn.active svg line { stroke: #fff; }
+    .persona-btn.active svg circle[fill]:not([fill="none"]) { fill: #fff; }
+    .persona-icon svg { width: 46px; height: 46px; }
+
+    /* ── Accordion sections ── */
+    .section {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+    }
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 14px; background: #fff; cursor: pointer;
+    }
+    .section-title { font-size: 14px; font-weight: 600; color: #222; }
+    .section-toggle {
+      width: 24px; height: 24px; border-radius: 4px;
+      border: 1px solid #ccc; background: #fff;
+      font-size: 16px; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: #555;
+    }
+    .section-body { padding: 10px 12px 14px; background: #fff; }
+
+    /* ── Score boxes ── */
+    .score-area { display: flex; gap: 8px; align-items: flex-start; }
+    .score-boxes { display: grid; grid-template-columns: repeat(3, 90px); gap: 6px; }
+    .score-box {
+      width: 90px; border-radius: 6px;
+      display: flex; flex-direction: column; align-items: center;
+      border: 2px solid transparent; cursor: pointer; transition: opacity 0.12s;
+      background: #fff;
+    }
+    .score-box-top {
+      width: 100%; height: 34px; background: #A9AEC7;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 4px 4px 0 0;
+    }
+    .score-box-top svg { width: 18px; height: 18px; }
+    .score-box-pct {
+      font-size: 22px; font-weight: 500; color: #333;
+      padding: 5px 0 2px;
+    }
+    .score-box-lbl { font-size: 11px; color: #555; padding-bottom: 7px; }
+
+    /* category border colors */
+    .sb-wellness  { border-color: #A5CFE4; }
+    .sb-health    { border-color: #FE9A9A; }
+    .sb-education { border-color: #0E77B3; }
+    .sb-recreation{ border-color: #2DA12C; }
+    .sb-fitness   { border-color: #FF8017; }
+    .sb-safety    { border-color: #B2E18B; }
+    .sb-transit   { border-color: #D1D1D1; }
+    .sb-supply    { border-color: #E61824; }
+
+    /* ── Overall score panel ── */
+    .overall-panel {
+      flex: 1; border: 1px solid #e0e0e0; border-radius: 6px;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 10px 6px; gap: 8px;
+      min-width: 100px;
+    }
+    .overall-label { font-size: 12px; color: #333; font-weight: 500; }
+    .donut-wrap { position: relative; width: 100px; height: 100px; }
+    .donut-wrap svg { width: 100px; height: 100px; }
+    .donut-center {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 600; color: #333;
+    }
+
+    /* ── Climate risk ── */
+    .climate-empty { font-size: 12px; color: #888; }
+
+    /* ── Map area ── */
+    .map-area {
+      flex: 1; position: relative; overflow: hidden;
+      background: #1a1a1a;
+    }
+    /* Fake dark map background using CSS */
+    .map-bg {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse at 40% 55%, #1c2a1c 0%, #111 60%),
+        repeating-linear-gradient(45deg, rgba(255,255,255,0.012) 0px, rgba(255,255,255,0.012) 1px, transparent 1px, transparent 20px);
+    }
+    /* Road-like lines drawn on the fake map */
+    .map-svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0.45; }
+
+    /* Search bar */
+    .map-search {
+      position: absolute; top: 14px; left: 14px;
+      width: 320px; padding: 9px 14px;
+      border-radius: 6px; border: 1px solid #ccc;
+      background: #fff; font-size: 13px; color: #555;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      outline: none;
+    }
+    .map-search::placeholder { color: #aaa; }
+
+    /* Mapbox logo */
+    .mapbox-logo {
+      position: absolute; bottom: 10px; left: 14px;
+      background: #fff; border-radius: 3px; padding: 3px 7px;
+      font-size: 11px; font-weight: 700; color: #000; display: flex; align-items: center; gap: 4px;
+    }
+    .mapbox-logo-dot { width: 10px; height: 10px; background: #4264fb; border-radius: 50%; }
+
+    /* Scale bar */
+    .scale-bar {
+      position: absolute; bottom: 10px; left: 120px;
+      background: rgba(255,255,255,0.9); border-radius: 3px;
+      padding: 2px 8px; font-size: 10px; color: #333;
+      border: 1px solid #ccc;
+    }
+
+    /* Mapbox attribution */
+    .map-attr {
+      position: absolute; bottom: 6px; right: 10px;
+      font-size: 9px; color: rgba(255,255,255,0.5);
+    }
+
+    /* ── Right panel ── */
+    .right-panel {
+      width: 260px; min-width: 260px;
+      background: transparent;
+      display: flex; flex-direction: column;
+      gap: 0; overflow-y: auto; padding: 10px;
+      gap: 10px;
+    }
+    .right-panel::-webkit-scrollbar { width: 4px; }
+
+    .right-card {
+      background: rgba(250,252,250,0.97);
+      border-radius: 8px; overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .right-card-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 12px; border-bottom: 1px solid #e8e8e8;
+    }
+    .right-card-title { font-size: 14px; font-weight: 600; color: #222; }
+    .right-card-icons { display: flex; gap: 6px; align-items: center; }
+    .icon-btn { font-size: 16px; color: #666; cursor: pointer; background: none; border: none; padding: 0; }
+    .right-card-body { padding: 10px 12px; }
+
+    /* Legend table */
+    .legend-header-row {
+      display: flex; justify-content: space-between;
+      font-size: 11px; font-weight: 600; color: #555;
+      margin-bottom: 6px; padding: 0 2px;
+    }
+    .legend-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 4px 2px; font-size: 12px; color: #333;
+    }
+    .legend-left { display: flex; align-items: center; gap: 8px; }
+    .legend-dot { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .legend-count { font-size: 12px; color: #333; }
+
+    /* Map settings */
+    .settings-section-title { font-size: 13px; font-weight: 600; color: #333; margin-bottom: 8px; }
+    .add-layers-btn {
+      width: 100%; padding: 8px; border: 1.5px dashed #ccc;
+      border-radius: 6px; background: #fff; color: #555;
+      font-size: 12px; cursor: pointer; margin-bottom: 12px;
+    }
+    .basemap-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .basemap-thumb {
+      width: 48px; height: 48px; border-radius: 6px;
+      border: 2px solid transparent; cursor: pointer; overflow: hidden;
+      transition: border-color 0.12s;
+    }
+    .basemap-thumb.active { border-color: #2E7D32; }
+    .basemap-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Basemap color swatches since we can't load real tiles */
+    .bm-dark  { background: linear-gradient(135deg, #1a1a1a, #2a2a2a); }
+    .bm-light { background: linear-gradient(135deg, #e8e8e8, #f5f5f5); }
+    .bm-sat   { background: linear-gradient(135deg, #1a3a1a, #2a4a2a); }
+    .bm-streets { background: linear-gradient(135deg, #c8dce8, #e8f0e8); }
+
+    /* ── Bottom map controls ── */
+    .map-controls-bottom {
+      position: absolute; bottom: 40px; right: 270px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .ctrl-group {
+      background: rgba(255,255,255,0.95); border-radius: 6px;
+      display: flex; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .ctrl-btn {
+      width: 32px; height: 32px; border: none; background: transparent;
+      font-size: 16px; color: #333; cursor: pointer; border-right: 1px solid #ddd;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ctrl-btn:last-child { border-right: none; }
+
+    /* SVG icons for persona */
+    .icon-tourist { font-size: 28px; }
+    .icon-entrepreneur { font-size: 28px; }
+    .icon-relocation { font-size: 28px; }
+  </style>
+</head>
+<body>
+
+  <!-- Left Panel (tab is inside the panel as one visual unit) -->
+  <div class="left-panel">
+    <div class="side-tab">
+      <span class="side-tab-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <ellipse cx="12" cy="12" rx="9" ry="5.5" stroke="#fff" stroke-width="1.8"/>
+          <circle cx="12" cy="12" r="2.8" fill="#fff"/>
+        </svg>
+      </span>
+      <span class="side-tab-label">20 Min</span>
+    </div>
+    <div class="panel-content">
+
+      <!-- Filters header -->
+      <div class="filters-header">
+        <span class="filters-title">Filters</span>
+        <div class="btn-row">
+          <button class="btn-drop-pin">Drop Pin</button>
+          <button class="btn-reset">Reset</button>
+        </div>
+      </div>
+
+      <!-- Travel Mode + Travel Time -->
+      <div class="travel-row">
+        <div class="travel-group">
+          <span class="travel-label">Travel Mode</span>
+          <div class="btn-strip">
+            <button class="strip-btn active" onclick="selectStrip(this)">Walk</button>
+            <button class="strip-btn" onclick="selectStrip(this)">Bike</button>
+          </div>
+        </div>
+        <div class="travel-group">
+          <span class="travel-label">Travel Time</span>
+          <div class="btn-strip">
+            <button class="strip-btn" onclick="selectStrip(this)">10</button>
+            <button class="strip-btn active" onclick="selectStrip(this)">15</button>
+            <button class="strip-btn" onclick="selectStrip(this)">20</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Persona -->
+      <div>
+        <div class="persona-label">Persona</div>
+        <div class="persona-row">
+
+          <!-- Tourist -->
+          <button class="persona-btn" onclick="selectPersona(this)">
+            <div class="persona-icon">
+              <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="18" cy="8" r="4" fill="#333"/>
+                <line x1="18" y1="12" x2="18" y2="24" stroke="#333" stroke-width="2.5"/>
+                <line x1="18" y1="18" x2="11" y2="23" stroke="#333" stroke-width="2"/>
+                <line x1="18" y1="18" x2="25" y2="23" stroke="#333" stroke-width="2"/>
+                <line x1="18" y1="24" x2="13" y2="33" stroke="#333" stroke-width="2"/>
+                <line x1="18" y1="24" x2="23" y2="33" stroke="#333" stroke-width="2"/>
+                <!-- suitcase -->
+                <rect x="22" y="20" width="6" height="5" rx="1" fill="#333"/>
+                <line x1="23.5" y1="20" x2="23.5" y2="18.5" stroke="#333" stroke-width="1.2"/>
+                <line x1="26.5" y1="20" x2="26.5" y2="18.5" stroke="#333" stroke-width="1.2"/>
+              </svg>
+            </div>
+            <span>Tourist</span>
+          </button>
+
+          <!-- Entrepreneur -->
+          <button class="persona-btn" onclick="selectPersona(this)">
+            <div class="persona-icon">
+              <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="18" cy="8" r="4" fill="#333"/>
+                <line x1="18" y1="12" x2="18" y2="24" stroke="#333" stroke-width="2.5"/>
+                <line x1="18" y1="18" x2="11" y2="23" stroke="#333" stroke-width="2"/>
+                <line x1="18" y1="18" x2="25" y2="23" stroke="#333" stroke-width="2"/>
+                <line x1="18" y1="24" x2="13" y2="33" stroke="#333" stroke-width="2"/>
+                <line x1="18" y1="24" x2="23" y2="33" stroke="#333" stroke-width="2"/>
+                <!-- briefcase -->
+                <rect x="22" y="19" width="7" height="5" rx="1" fill="#333"/>
+                <line x1="23.5" y1="19" x2="23.5" y2="17.5" stroke="#333" stroke-width="1.2"/>
+                <line x1="27" y1="19" x2="27" y2="17.5" stroke="#333" stroke-width="1.2"/>
+                <line x1="22" y1="21.5" x2="29" y2="21.5" stroke="#fff" stroke-width="0.8"/>
+              </svg>
+            </div>
+            <span>Entrepreneur</span>
+          </button>
+
+          <!-- Re-location -->
+          <button class="persona-btn active" onclick="selectPersona(this)">
+            <div class="persona-icon">
+              <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- two people -->
+                <circle cx="13" cy="8" r="3.5" fill="#fff"/>
+                <line x1="13" y1="11.5" x2="13" y2="21" stroke="#fff" stroke-width="2.2"/>
+                <line x1="13" y1="16" x2="8" y2="20" stroke="#fff" stroke-width="1.8"/>
+                <line x1="13" y1="16" x2="18" y2="20" stroke="#fff" stroke-width="1.8"/>
+                <line x1="13" y1="21" x2="10" y2="29" stroke="#fff" stroke-width="1.8"/>
+                <line x1="13" y1="21" x2="16" y2="29" stroke="#fff" stroke-width="1.8"/>
+                <circle cx="24" cy="8" r="3.5" fill="#fff"/>
+                <line x1="24" y1="11.5" x2="24" y2="21" stroke="#fff" stroke-width="2.2"/>
+                <line x1="24" y1="16" x2="19" y2="20" stroke="#fff" stroke-width="1.8"/>
+                <line x1="24" y1="16" x2="29" y2="20" stroke="#fff" stroke-width="1.8"/>
+                <line x1="24" y1="21" x2="21" y2="29" stroke="#fff" stroke-width="1.8"/>
+                <line x1="24" y1="21" x2="27" y2="29" stroke="#fff" stroke-width="1.8"/>
+              </svg>
+            </div>
+            <span>Re-location</span>
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Score Section -->
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <span class="section-title">Score</span>
+          <button class="section-toggle">−</button>
+        </div>
+        <div class="section-body">
+          <div class="score-area">
+            <!-- Score boxes grid -->
+            <div class="score-boxes">
+
+              <!-- Wellness -->
+              <div class="score-box sb-wellness" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 4 14.5 4 9a5 5 0 0110 0 5 5 0 0110 0c0 5.5-8 12-8 12z" stroke="#555" stroke-width="1.5" fill="none"/><path d="M8 12c1.5-1 3 1 4 0s2.5-2 4-1" stroke="#555" stroke-width="1.2"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Wellness</span>
+              </div>
+
+              <!-- Health -->
+              <div class="score-box sb-health" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M12 21C5.5 15.5 3 12 3 8.5A5.5 5.5 0 0112 5a5.5 5.5 0 019 3.5C21 12 18.5 15.5 12 21z" fill="#e57373" stroke="none"/><line x1="12" y1="9" x2="12" y2="15" stroke="#fff" stroke-width="1.8"/><line x1="9" y1="12" x2="15" y2="12" stroke="#fff" stroke-width="1.8"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Health</span>
+              </div>
+
+              <!-- Education -->
+              <div class="score-box sb-education" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="4" y="8" width="16" height="11" rx="1.5" fill="#1976d2" opacity="0.85"/><path d="M4 11h16" stroke="#fff" stroke-width="1.2"/><rect x="9" y="5" width="6" height="4" rx="1" fill="#1976d2" opacity="0.7"/><line x1="8" y1="14" x2="16" y2="14" stroke="#fff" stroke-width="1.2"/><line x1="8" y1="16.5" x2="13" y2="16.5" stroke="#fff" stroke-width="1.2"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Education</span>
+              </div>
+
+              <!-- Recreation -->
+              <div class="score-box sb-recreation" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.5" fill="#2e7d32" opacity="0.85"/><path d="M5 20c0-4.5 3-7 7-7s7 2.5 7 7" stroke="#2e7d32" stroke-width="1.8" fill="none"/><path d="M3 16c1-2 3-3 4-2" stroke="#66bb6a" stroke-width="1.2"/><path d="M21 16c-1-2-3-3-4-2" stroke="#66bb6a" stroke-width="1.2"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Recreation</span>
+              </div>
+
+              <!-- Fitness -->
+              <div class="score-box sb-fitness" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="6" r="2.5" fill="#e65100"/><line x1="12" y1="8.5" x2="12" y2="16" stroke="#e65100" stroke-width="2"/><line x1="8" y1="11" x2="16" y2="11" stroke="#e65100" stroke-width="1.8"/><line x1="12" y1="16" x2="9" y2="21" stroke="#e65100" stroke-width="1.8"/><line x1="12" y1="16" x2="15" y2="21" stroke="#e65100" stroke-width="1.8"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Fitness</span>
+              </div>
+
+              <!-- Safety -->
+              <div class="score-box sb-safety" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M12 3l8 3.5v5c0 4.5-3.5 8-8 10-4.5-2-8-5.5-8-10v-5z" fill="#558b2f" opacity="0.85"/><polyline points="9,12 11,15 15,10" stroke="#fff" stroke-width="1.8" fill="none"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Safety</span>
+              </div>
+
+              <!-- Transit -->
+              <div class="score-box sb-transit" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><rect x="5" y="6" width="14" height="10" rx="2" fill="#757575" opacity="0.85"/><rect x="7" y="8" width="4" height="3" rx="0.5" fill="#fff" opacity="0.8"/><rect x="13" y="8" width="4" height="3" rx="0.5" fill="#fff" opacity="0.8"/><line x1="5" y1="12" x2="19" y2="12" stroke="#fff" stroke-width="0.8"/><line x1="8" y1="16" x2="8" y2="19" stroke="#757575" stroke-width="2"/><line x1="16" y1="16" x2="16" y2="19" stroke="#757575" stroke-width="2"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Transit</span>
+              </div>
+
+              <!-- Supply -->
+              <div class="score-box sb-supply" onclick="toggleScore(this)">
+                <div class="score-box-top">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M3 6h18l-2 9H5z" fill="#c62828" opacity="0.85"/><circle cx="9" cy="19" r="1.5" fill="#c62828"/><circle cx="16" cy="19" r="1.5" fill="#c62828"/><path d="M3 6l-1-3H1" stroke="#c62828" stroke-width="1.5"/><line x1="9" y1="9" x2="9" y2="13" stroke="#fff" stroke-width="1.2"/><line x1="12" y1="9" x2="12" y2="13" stroke="#fff" stroke-width="1.2"/><line x1="15" y1="9" x2="15" y2="13" stroke="#fff" stroke-width="1.2"/></svg>
+                </div>
+                <span class="score-box-pct">0%</span>
+                <span class="score-box-lbl">Supply</span>
+              </div>
+
+            </div>
+
+            <!-- Overall Score -->
+            <div class="overall-panel">
+              <span class="overall-label">Overall Score</span>
+              <div class="donut-wrap">
+                <svg viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="#37474f" stroke-width="10"
+                    stroke-dasharray="3 239" stroke-linecap="round"
+                    transform="rotate(-90 50 50)" id="donut-arc"/>
+                </svg>
+                <div class="donut-center" id="donut-label">0%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Climate Risk Score Section -->
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <span class="section-title">Climate Risk Score</span>
+          <button class="section-toggle">−</button>
+        </div>
+        <div class="section-body">
+          <p class="climate-empty">Drop a pin to see climate risk.</p>
+        </div>
+      </div>
+
+      <!-- Recent Weather Events Section -->
+      <div class="section">
+        <div class="section-header" onclick="toggleSection(this)">
+          <span class="section-title">Recent Weather Events</span>
+          <button class="section-toggle">−</button>
+        </div>
+        <div class="section-body">
+          <p class="climate-empty">Drop a pin to see weather events.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="map-area">
+    <div class="map-bg"></div>
+
+    <!-- Fake road network SVG -->
+    <svg class="map-svg" viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+      <!-- Major roads -->
+      <path d="M0,300 Q200,280 400,310 Q600,340 900,290" stroke="rgba(255,255,255,0.2)" stroke-width="3" fill="none"/>
+      <path d="M0,200 Q300,220 500,200 Q700,180 900,210" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+      <path d="M0,420 Q250,400 500,430 Q750,460 900,410" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+      <path d="M200,0 Q220,200 200,400 Q180,500 200,600" stroke="rgba(255,255,255,0.18)" stroke-width="2.5" fill="none"/>
+      <path d="M500,0 Q510,150 490,300 Q470,450 500,600" stroke="rgba(255,255,255,0.18)" stroke-width="2.5" fill="none"/>
+      <path d="M750,0 Q740,200 760,350 Q780,480 750,600" stroke="rgba(255,255,255,0.15)" stroke-width="2" fill="none"/>
+      <!-- Minor roads -->
+      <path d="M0,120 L900,150" stroke="rgba(255,255,255,0.07)" stroke-width="1" fill="none"/>
+      <path d="M0,370 L900,350" stroke="rgba(255,255,255,0.07)" stroke-width="1" fill="none"/>
+      <path d="M0,500 L900,480" stroke="rgba(255,255,255,0.07)" stroke-width="1" fill="none"/>
+      <path d="M100,0 L120,600" stroke="rgba(255,255,255,0.07)" stroke-width="1" fill="none"/>
+      <path d="M350,0 L340,600" stroke="rgba(255,255,255,0.07)" stroke-width="1" fill="none"/>
+      <path d="M650,0 L660,600" stroke="rgba(255,255,255,0.07)" stroke-width="1" fill="none"/>
+      <path d="M850,0 L840,600" stroke="rgba(255,255,255,0.07)" stroke-width="1" fill="none"/>
+      <!-- Diagonal connector -->
+      <path d="M0,100 Q300,250 500,300 Q700,350 900,500" stroke="rgba(255,255,255,0.1)" stroke-width="1.5" fill="none"/>
+      <!-- Labels -->
+      <text x="430" y="155" font-size="11" fill="rgba(255,255,255,0.35)" font-family="Roboto,sans-serif">DXB</text>
+      <text x="640" y="340" font-size="9" fill="rgba(255,255,255,0.3)" font-family="Roboto,sans-serif" text-anchor="middle">DWC -</text>
+      <text x="640" y="352" font-size="9" fill="rgba(255,255,255,0.3)" font-family="Roboto,sans-serif" text-anchor="middle">Al Maktoum</text>
+      <text x="640" y="364" font-size="9" fill="rgba(255,255,255,0.3)" font-family="Roboto,sans-serif" text-anchor="middle">International Airport</text>
+      <text x="750" y="470" font-size="9" fill="rgba(255,255,255,0.25)" font-family="Roboto,sans-serif" text-anchor="middle">Dubai Desert</text>
+      <text x="750" y="482" font-size="9" fill="rgba(255,255,255,0.25)" font-family="Roboto,sans-serif" text-anchor="middle">Conservation Reserve</text>
+      <text x="600" y="530" font-size="9" fill="rgba(255,255,255,0.25)" font-family="Roboto,sans-serif" text-anchor="middle">Al Marmoom Desert</text>
+      <text x="600" y="542" font-size="9" fill="rgba(255,255,255,0.25)" font-family="Roboto,sans-serif" text-anchor="middle">Conservation Reserve</text>
+    </svg>
+
+    <!-- Search bar -->
+    <input class="map-search" type="text" placeholder="Search location..." />
+
+    <!-- Mapbox logo -->
+    <div class="mapbox-logo">
+      <div class="mapbox-logo-dot"></div>
+      mapbox
+    </div>
+
+    <!-- Scale bar -->
+    <div class="scale-bar">10 km</div>
+
+    <!-- Map attribution -->
+    <div class="map-attr">© Mapbox © OpenStreetMap  Improve this map</div>
+
+    <!-- Bottom controls -->
+    <div class="map-controls-bottom">
+      <div class="ctrl-group">
+        <button class="ctrl-btn">◁</button>
+        <button class="ctrl-btn">+</button>
+        <button class="ctrl-btn">−</button>
+      </div>
+      <div class="ctrl-group">
+        <button class="ctrl-btn">◉</button>
+        <button class="ctrl-btn">◎</button>
+        <button class="ctrl-btn">▷</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="right-panel">
+
+    <!-- Legend card -->
+    <div class="right-card">
+      <div class="right-card-header">
+        <span class="right-card-title">Legend</span>
+        <div class="right-card-icons">
+          <button class="icon-btn">⚙</button>
+          <button class="icon-btn">−</button>
+        </div>
+      </div>
+      <div class="right-card-body">
+        <div class="legend-header-row">
+          <span>Legend</span>
+          <span># Amenities</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#e8f5e9">
+              <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5" fill="#2e7d32" opacity="0.85"/><path d="M5 20c0-4.5 3-7 7-7s7 2.5 7 7" stroke="#2e7d32" stroke-width="1.8" fill="none"/></svg>
+            </div>
+            <span>Recreation</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#fce4ec">
+              <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 21C5.5 15.5 3 12 3 8.5A5.5 5.5 0 0112 5a5.5 5.5 0 019 3.5C21 12 18.5 15.5 12 21z" fill="#e57373"/><line x1="12" y1="9" x2="12" y2="15" stroke="#fff" stroke-width="1.8"/><line x1="9" y1="12" x2="15" y2="12" stroke="#fff" stroke-width="1.8"/></svg>
+            </div>
+            <span>Health</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#f1f8e9">
+              <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 3l8 3.5v5c0 4.5-3.5 8-8 10-4.5-2-8-5.5-8-10v-5z" fill="#558b2f" opacity="0.85"/><polyline points="9,12 11,15 15,10" stroke="#fff" stroke-width="1.8" fill="none"/></svg>
+            </div>
+            <span>Safety</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#e3f2fd">
+              <svg width="14" height="14" viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="11" rx="1.5" fill="#1976d2" opacity="0.85"/><rect x="9" y="5" width="6" height="4" rx="1" fill="#1976d2" opacity="0.7"/></svg>
+            </div>
+            <span>Education</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#fff3e0">
+              <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="6" r="2.5" fill="#e65100"/><line x1="12" y1="8.5" x2="12" y2="16" stroke="#e65100" stroke-width="2"/><line x1="8" y1="11" x2="16" y2="11" stroke="#e65100" stroke-width="1.8"/><line x1="12" y1="16" x2="9" y2="21" stroke="#e65100" stroke-width="1.8"/><line x1="12" y1="16" x2="15" y2="21" stroke="#e65100" stroke-width="1.8"/></svg>
+            </div>
+            <span>Fitness</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#f5f5f5">
+              <svg width="14" height="14" viewBox="0 0 24 24"><rect x="5" y="6" width="14" height="10" rx="2" fill="#757575" opacity="0.85"/><rect x="7" y="8" width="4" height="3" rx="0.5" fill="#fff"/><rect x="13" y="8" width="4" height="3" rx="0.5" fill="#fff"/><line x1="8" y1="16" x2="8" y2="19" stroke="#757575" stroke-width="2"/><line x1="16" y1="16" x2="16" y2="19" stroke="#757575" stroke-width="2"/></svg>
+            </div>
+            <span>Transit</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#ffebee">
+              <svg width="14" height="14" viewBox="0 0 24 24"><path d="M3 6h18l-2 9H5z" fill="#c62828" opacity="0.85"/><circle cx="9" cy="19" r="1.5" fill="#c62828"/><circle cx="16" cy="19" r="1.5" fill="#c62828"/></svg>
+            </div>
+            <span>Supply</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+        <div class="legend-row">
+          <div class="legend-left">
+            <div class="legend-dot" style="background:#e1f5fe">
+              <svg width="14" height="14" viewBox="0 0 24 24"><path d="M12 21C12 21 4 14.5 4 9a5 5 0 0110 0 5 5 0 0110 0c0 5.5-8 12-8 12z" stroke="#0288d1" stroke-width="1.5" fill="none"/></svg>
+            </div>
+            <span>Wellness</span>
+          </div>
+          <span class="legend-count">-</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Settings card -->
+    <div class="right-card">
+      <div class="right-card-header">
+        <span class="right-card-title">Map Settings</span>
+        <div class="right-card-icons">
+          <button class="icon-btn">−</button>
+        </div>
+      </div>
+      <div class="right-card-body">
+        <div class="settings-section-title">Layers</div>
+        <button class="add-layers-btn">+ Add Layers</button>
+        <div class="settings-section-title">Base Map</div>
+        <div class="basemap-row">
+          <div class="basemap-thumb active bm-dark"></div>
+          <div class="basemap-thumb bm-light"></div>
+          <div class="basemap-thumb bm-sat"></div>
+          <div class="basemap-thumb bm-streets"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function selectStrip(btn) {
+      btn.closest('.btn-strip').querySelectorAll('.strip-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function selectPersona(btn) {
+      btn.closest('.persona-row').querySelectorAll('.persona-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function toggleScore(box) {
+      const wasActive = box.classList.contains('active');
+      document.querySelectorAll('.score-box').forEach(b => {
+        b.classList.remove('active');
+        b.style.opacity = '1';
+      });
+      if (!wasActive) {
+        box.classList.add('active');
+        document.querySelectorAll('.score-box').forEach(b => {
+          if (!b.classList.contains('active')) b.style.opacity = '0.4';
+        });
+      }
+    }
+    function toggleSection(header) {
+      const body = header.nextElementSibling;
+      const btn = header.querySelector('.section-toggle');
+      const isOpen = body.style.display !== 'none';
+      body.style.display = isOpen ? 'none' : 'block';
+      btn.textContent = isOpen ? '+' : '−';
+    }
+  </script>
+</body>
+</html>
