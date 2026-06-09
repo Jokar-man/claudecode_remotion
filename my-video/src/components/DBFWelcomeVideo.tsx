@@ -459,7 +459,7 @@ const Scene2SlideB: React.FC = () => {
 
 const Scene2: React.FC = () => (
   <>
-    <Sequence from={0}   durationInFrames={240}><Scene2SlideA /></Sequence>
+    <Sequence    durationInFrames={240}><Scene2SlideA /></Sequence>
     <Sequence from={240} durationInFrames={150}><Scene2SlideB /></Sequence>
   </>
 );
@@ -508,7 +508,7 @@ const Scene3Plot: React.FC = () => {
 
 const Scene3: React.FC = () => (
   <>
-    <Sequence from={0}   durationInFrames={225}><Scene3Mass /></Sequence>
+    <Sequence    durationInFrames={225}><Scene3Mass /></Sequence>
     <Sequence from={225} durationInFrames={200}><Scene3Plot /></Sequence>
   </>
 );
@@ -647,7 +647,7 @@ const Scene5: React.FC = () => {
   const CD = 449;
   return (
     <>
-      <Sequence from={0}      durationInFrames={CD}><Scene5A /></Sequence>
+      <Sequence       durationInFrames={CD}><Scene5A /></Sequence>
       <Sequence from={CD}     durationInFrames={CD}><Scene5B /></Sequence>
       <Sequence from={CD * 2} durationInFrames={CD}><Scene5C /></Sequence>
       <Sequence from={CD * 3} durationInFrames={448}><Scene5D /></Sequence>

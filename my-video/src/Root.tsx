@@ -4,6 +4,8 @@ import { AIVideo, aiVideoSchema } from "./components/AIVideo";
 import { DBFVideo } from "./components/DBFVideo";
 import { DBFWelcomeVideo } from "./components/DBFWelcomeVideo";
 import { MiningVideo } from "./components/MiningVideo";
+import { ThesisVideo } from "./components/ThesisVideo";
+import { ThesisNewsNode } from "./components/ThesisNewsNode";
 import { FPS, INTRO_DURATION } from "./lib/constants";
 import { getTimelinePath, loadTimelineFromFile } from "./lib/utils";
 
@@ -34,6 +36,28 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         durationInFrames={120 * 30}
+        defaultProps={{}}
+      />
+
+      {/* Thesis — Vintage Documentary: Climate Change 1958–2026 */}
+      <Composition
+        id="thesis-archival"
+        component={ThesisVideo}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={1800}
+        defaultProps={{}}
+      />
+
+      {/* Thesis — Miro-board camera pan through news archive */}
+      <Composition
+        id="thesis-newsnode"
+        component={ThesisNewsNode}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={1140}
         defaultProps={{}}
       />
 

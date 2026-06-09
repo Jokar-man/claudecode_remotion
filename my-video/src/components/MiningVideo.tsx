@@ -2675,7 +2675,7 @@ export const MiningVideo: React.FC = () => {
   return (
     <AbsoluteFill style={{ background: C.bg, fontFamily }}>
       {/* Scene 1: Aerial pull-in — 0–240f */}
-      <Sequence from={0} durationInFrames={240}>
+      <Sequence  durationInFrames={240}>
         <Scene1 />
       </Sequence>
 
