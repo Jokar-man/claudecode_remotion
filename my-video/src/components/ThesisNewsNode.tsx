@@ -117,25 +117,10 @@ const getCamPos = (frame: number): Vec2 => {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const frand = (s: number) => { const x = Math.sin(s + 1) * 10000; return x - Math.floor(x); };
 
-// ─── Color grade — red-to-blue gradient tint ─────────────────────────────────
-// Desaturates all content to B&W, then recolors it with a spatial gradient:
-// left=vivid red, centre=purple, right=deep blue.
-// mix-blend-mode:"color" preserves the content's luminosity (detail/texture)
-// while applying the gradient's hue+saturation across the screen.
+// ─── Color grade — B&W only ───────────────────────────────────────────────────
 const ColorGrade: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <AbsoluteFill style={{ isolation: "isolate" }}>
-    {/* Greyscale + slight contrast boost */}
-    <AbsoluteFill style={{ filter: "grayscale(1) contrast(0.92) brightness(1.05)" }}>
-      {children}
-    </AbsoluteFill>
-    {/* Red → purple → blue gradient overlay */}
-    <AbsoluteFill
-      style={{
-        background: "linear-gradient(to right, #EC1020 0%, #A80898 42%, #1028EC 100%)",
-        mixBlendMode: "color",
-        pointerEvents: "none",
-      }}
-    />
+  <AbsoluteFill style={{ filter: "grayscale(1) contrast(0.92) brightness(1.05)" }}>
+    {children}
   </AbsoluteFill>
 );
 
