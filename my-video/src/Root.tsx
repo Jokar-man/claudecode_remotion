@@ -3,6 +3,7 @@ import { Composition, getStaticFiles } from "remotion";
 import { AIVideo, aiVideoSchema } from "./components/AIVideo";
 import { DBFVideo } from "./components/DBFVideo";
 import { DBFWelcomeVideo } from "./components/DBFWelcomeVideo";
+import { DBFSydneyVideo } from "./components/DBFSydneyVideo";
 import { MiningVideo } from "./components/MiningVideo";
 import { ThesisVideo } from "./components/ThesisVideo";
 import { ThesisNewsNode } from "./components/ThesisNewsNode";
@@ -25,6 +26,17 @@ export const RemotionRoot: React.FC = () => {
         width={1920}
         height={1080}
         durationInFrames={120 * 30}
+        defaultProps={{}}
+      />
+
+      {/* Digital Blue Foam — Sydney City Brain (1920×1080, 2 min 15 s) */}
+      <Composition
+        id="dbf-sydney"
+        component={DBFSydneyVideo}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={4050}
         defaultProps={{}}
       />
 
