@@ -140,23 +140,48 @@ const DemoBG: React.FC<{ src: string; overlayOpacity?: number }> = ({ src, overl
   </AbsoluteFill>
 );
 
-// ─── Blur boxes — coordinates traced from user's Illustrator SVGs (1920×1080) ─
+// ─── Blur boxes — coordinates pixel-perfect from Illustrator SVGs (1920×1080) ─
 
-// Scene5A: "Urban Memory and Decision Metrics"
-const MapBlurA: React.FC = () => (
-  <>
-    <div style={{ position: "absolute", left: 681,  top: 444, width: 327, height: 441, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", background: "rgba(4,11,28,0.52)", borderRadius: 3, pointerEvents: "none", zIndex: 10 }} />
-    <div style={{ position: "absolute", left: 1690, top: 265, width: 153, height: 439, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", background: "rgba(4,11,28,0.52)", borderRadius: 3, pointerEvents: "none", zIndex: 10 }} />
-  </>
+const BlurBox: React.FC<{ x: number; y: number; w: number; h: number; op: number }> = ({ x, y, w, h, op }) => (
+  <div style={{ position: "absolute", left: x, top: y, width: w, height: h, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", background: "rgba(4,11,28,0.55)", borderRadius: 2, pointerEvents: "none", zIndex: 10, opacity: op }} />
 );
 
-// Scene5B: "AI Driven Urban Layout Generation"
-const MapBlurB: React.FC = () => (
-  <>
-    <div style={{ position: "absolute", left: 711,  top: 434, width: 327, height: 441, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", background: "rgba(4,11,28,0.52)", borderRadius: 3, pointerEvents: "none", zIndex: 10 }} />
-    <div style={{ position: "absolute", left: 1676, top: 298, width: 153, height: 439, backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)", background: "rgba(4,11,28,0.52)", borderRadius: 3, pointerEvents: "none", zIndex: 10 }} />
-  </>
-);
+// Scene5A: visible until local frame 176 (absolute 1831), then fades out over 10 frames
+const MapBlurA: React.FC = () => {
+  const f = useCurrentFrame();
+  const op = clamp((175 - f) / 10, 0, 1);
+  if (op === 0) return null;
+  return (
+    <>
+      <BlurBox x={1691} y={313} w={150} h={76}  op={op} />
+      <BlurBox x={692}  y={453} w={59}  h={107} op={op} />
+      <BlurBox x={772}  y={453} w={59}  h={107} op={op} />
+      <BlurBox x={851}  y={453} w={59}  h={107} op={op} />
+      <BlurBox x={931}  y={453} w={59}  h={107} op={op} />
+      <BlurBox x={692}  y={587} w={59}  h={107} op={op} />
+      <BlurBox x={772}  y={587} w={59}  h={107} op={op} />
+      <BlurBox x={852}  y={587} w={59}  h={107} op={op} />
+      <BlurBox x={931}  y={587} w={59}  h={107} op={op} />
+      <BlurBox x={688}  y={804} w={303} h={84}  op={op} />
+    </>
+  );
+};
+
+// Scene5B: hidden until local frame 72 (absolute 2176), fades in over 10 frames
+const MapBlurB: React.FC = () => {
+  const f = useCurrentFrame();
+  const op = clamp((f - 72) / 10, 0, 1);
+  if (op === 0) return null;
+  return (
+    <>
+      <BlurBox x={1671} y={328} w={150} h={124} op={op} />
+      <BlurBox x={719}  y={553} w={218} h={32}  op={op} />
+      <BlurBox x={719}  y={609} w={218} h={32}  op={op} />
+      <BlurBox x={945}  y={547} w={71}  h={83}  op={op} />
+      <BlurBox x={712}  y={714} w={303} h={162} op={op} />
+    </>
+  );
+};
 
 // ─── Shared text primitives ───────────────────────────────────────────────────
 const Grid: React.FC<{ opacity?: number }> = ({ opacity = 0.07 }) => (
@@ -396,7 +421,7 @@ const Scene3Mass: React.FC = () => {
       <Grid opacity={0.07} />
       <Scan opacity={0.13} />
       <MonoTag text="Our Work & Partners" f={f} startF={8} />
-      <H1 text="DBFMass" f={f} startF={20} top={370} fontSize={90} />
+      <H1 text="DBFmass" f={f} startF={20} top={370} fontSize={90} />
       <BodyText text="The city's 3D spatial reasoning engine, encoding zoning constraints and density targets into buildable form at urban scale." f={f} startF={48} top={474} />
       <Logo />
       <SceneFade fadeInDur={16} fadeOutDur={16} />
@@ -412,7 +437,7 @@ const Scene3Plot: React.FC = () => {
       <DemoBG src={V.plot} overlayOpacity={0.28} />
       <Grid opacity={0.07} />
       <MonoTag text="Our Work & Partners" f={f} startF={8} />
-      <H1 text="DBFPlot" f={f} startF={20} top={370} fontSize={90} />
+      <H1 text="DBFplot" f={f} startF={20} top={370} fontSize={90} />
       <BodyText text="Site level intelligence layer. Each parcel knows its constraints, FAR targets and compliance pathways, building the city's ground truth memory." f={f} startF={48} top={474} />
       <div style={{ position: "absolute", bottom: 108, left: 120, display: "flex", alignItems: "center", gap: 32, opacity: fi(f, 62, 20) }}>
         <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.22em", color: C.muted, textTransform: "uppercase" }}>Partners</div>
@@ -674,7 +699,7 @@ const Scene7Outro: React.FC = () => {
       </div>
 
       <div style={{ position: "absolute", top: "55%", left: "50%", transform: `translate(-50%, calc(-50% + ${su(f, 88, 22, 14)}px))`, opacity: fi(f, 88, 22), fontFamily: inter, fontSize: 26, fontWeight: 300, fontStyle: "italic", color: C.lightBlue, letterSpacing: "0.015em", textAlign: "center", whiteSpace: "nowrap" }}>
-        Brain of cities since 2021.
+        Digital Blue Foam is building the reasoning layer for urban decisions
       </div>
 
       <div style={{ position: "absolute", bottom: "18%", left: "50%", transform: "translateX(-50%)", opacity: fi(f, 108, 20) }}>
