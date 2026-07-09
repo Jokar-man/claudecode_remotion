@@ -64,7 +64,6 @@ const A = { logo: staticFile("assets/dbf-white.svg") };
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const easeOut3 = (t: number) => 1 - Math.pow(1 - t, 3);
-const easeOut  = (t: number) => 1 - (1 - t) * (1 - t);
 
 const fi = (f: number, startF: number, dur = 20) =>
   easeOut3(clamp((f - startF) / dur, 0, 1));
@@ -133,9 +132,9 @@ const LandscapeBG: React.FC<{ src: string; startFrom?: number; overlayOpacity?: 
   </AbsoluteFill>
 );
 
-const DemoBG: React.FC<{ src: string; overlayOpacity?: number }> = ({ src, overlayOpacity = 0.3 }) => (
+const DemoBG: React.FC<{ src: string; overlayOpacity?: number; videoTop?: string }> = ({ src, overlayOpacity = 0.3, videoTop = "50%" }) => (
   <AbsoluteFill style={{ overflow: "hidden", background: "#06080F" }}>
-    <OffthreadVideo src={src} muted style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", maxWidth: "86%", maxHeight: "86%", objectFit: "contain" }} />
+    <OffthreadVideo src={src} muted style={{ position: "absolute", top: videoTop, left: "50%", transform: "translate(-50%,-50%)", maxWidth: "86%", maxHeight: "86%", objectFit: "contain" }} />
     <AbsoluteFill style={{ background: `rgba(0,0,0,${overlayOpacity})`, pointerEvents: "none" }} />
   </AbsoluteFill>
 );
@@ -235,10 +234,10 @@ const BotLabel: React.FC<{ text: string; f: number; startF?: number }> = ({ text
   </div>
 );
 
-const DTitle: React.FC<{ num: string; title: string; f: number; startF?: number }> = ({ num, title, f, startF = 0 }) => (
+const DTitle: React.FC<{ num: string; title: string; f: number; startF?: number; titleSize?: number }> = ({ num, title, f, startF = 0, titleSize = 48 }) => (
   <div style={{ position: "absolute", top: 76, left: 120, opacity: fi(f, startF, 22), transform: `translateY(${su(f, startF, 22, 16)}px)` }}>
     <div style={{ fontFamily: mono, fontSize: 12, fontWeight: 400, letterSpacing: "0.28em", textTransform: "uppercase", color: C.cyan, marginBottom: 10 }}>{num}</div>
-    <div style={{ fontFamily: inter, fontSize: 48, fontWeight: 800, color: C.white, letterSpacing: "-0.5px", lineHeight: 1.1, maxWidth: 760 }}>{title}</div>
+    <div style={{ fontFamily: inter, fontSize: titleSize, fontWeight: 800, color: C.white, letterSpacing: "-0.5px", lineHeight: 1.1, whiteSpace: "nowrap" }}>{title}</div>
   </div>
 );
 
@@ -259,37 +258,6 @@ const KPICard: React.FC<{ label: string; value: string; unit: string; color: str
   </div>
 );
 
-const IsoRings: React.FC<{ cx: number; cy: number; progress: number }> = ({ cx, cy, progress }) => {
-  const rings = [
-    { maxR: 190, delay: 0,    color: C.green,     label: "5 min" },
-    { maxR: 340, delay: 0.22, color: C.cyan,      label: "10 min" },
-    { maxR: 490, delay: 0.42, color: C.lightBlue, label: "20 min" },
-  ];
-  return (
-    <svg width={1920} height={1080} style={{ position: "absolute", top: 0, left: 0, pointerEvents: "none" }}>
-      {rings.map((ring, i) => {
-        const lp  = clamp((progress - ring.delay) / (1 - ring.delay + 0.01), 0, 1);
-        const r   = ring.maxR * easeOut(lp);
-        const opa = lp > 0 ? 0.55 * (1 - lp * 0.28) : 0;
-        return (
-          <g key={i}>
-            <circle cx={cx} cy={cy} r={r} fill={`${ring.color}09`} stroke={ring.color} strokeWidth={1.5} strokeDasharray="10 7" opacity={opa} />
-            {lp > 0.75 && (
-              <text x={cx + r + 10} y={cy + 5} fill={ring.color} fontSize={13} fontFamily={`${mono}, monospace`} opacity={Math.min((lp - 0.75) / 0.2, 1) * 0.85}>{ring.label}</text>
-            )}
-          </g>
-        );
-      })}
-      {progress > 0.05 && (
-        <>
-          <circle cx={cx} cy={cy} r={22} fill={C.cyan} opacity={0.12} />
-          <circle cx={cx} cy={cy} r={9}  fill={C.cyan} opacity={0.75} />
-          <circle cx={cx} cy={cy} r={4}  fill={C.white} />
-        </>
-      )}
-    </svg>
-  );
-};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCENE 1 — Company Intro
@@ -315,7 +283,7 @@ const Scene1: React.FC = () => {
       </div>
 
       <div style={{ position: "absolute", top: "57%", left: "50%", transform: `translate(-50%, calc(-50% + ${su(f, 100, 26, 16)}px))`, opacity: fi(f, 100, 26), fontFamily: inter, fontSize: 25, fontWeight: 300, color: C.lightBlue, letterSpacing: "0.05em", textAlign: "center", whiteSpace: "nowrap" }}>
-        The Urban Brain. Connecting cities, informing decisions.
+        Building the reasoning layer for urban decisions.
       </div>
 
       <div style={{ position: "absolute", top: "63.5%", left: "50%", transform: "translateX(-50%)", opacity: fi(f, 130, 26), display: "flex", alignItems: "center", gap: 14 }}>
@@ -336,49 +304,19 @@ const Scene1: React.FC = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SCENE 2 — What We Build
 // ═══════════════════════════════════════════════════════════════════════════════
-const PanelText: React.FC<{
-  label: string; title: string; body: string; accentColor: string;
-  f: number; startF?: number; left?: number; right?: number;
-}> = ({ label, title, body, accentColor, f, startF = 0, left = 40, right = 40 }) => (
-  <div style={{ position: "absolute", bottom: 90, left, right, opacity: fi(f, startF, 22), transform: `translateY(${su(f, startF, 22, 16)}px)` }}>
-    <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.26em", color: accentColor, textTransform: "uppercase", marginBottom: 10 }}>{label}</div>
-    <div style={{ fontFamily: inter, fontSize: 30, fontWeight: 800, color: C.white, lineHeight: 1.1, marginBottom: 12 }}>{title}</div>
-    <div style={{ fontFamily: inter, fontSize: 17, fontWeight: 300, color: C.muted, lineHeight: 1.55 }}>{body}</div>
-  </div>
-);
-
 const Scene2SlideA: React.FC = () => {
   const f = useCurrentFrame();
   const PW = 960;
   const panels = [
-    {
-      src: V.gen,
-      left: 0,
-      accentColor: C.cyan,
-      label: "Generative Design",
-      title: "Form from Constraints",
-      body: "DBF's generative cortex encodes urban rules into built form, letting the city think through thousands of layout variants in minutes.",
-    },
-    {
-      src: V.city,
-      left: PW,
-      accentColor: C.lightBlue,
-      label: "Performance Analytics",
-      title: "Live Urban KPIs",
-      body: "The city's sensory layer: walkability, density, green space, and solar access continuously computed as the urban fabric evolves.",
-    },
+    { src: V.gen,  left: 0,  accentColor: C.cyan },
+    { src: V.city, left: PW, accentColor: C.lightBlue },
   ];
   return (
     <>
-      <MonoTag text="What We Build" f={f} startF={8} />
       {panels.map((p) => (
-        <React.Fragment key={p.label}>
+        <React.Fragment key={p.left}>
           <PortraitPanel src={p.src} left={p.left} width={PW} />
-          <div style={{ position: "absolute", left: p.left, bottom: 0, width: PW, height: 400, background: "linear-gradient(to bottom, transparent, rgba(0,0,0,0.93))", pointerEvents: "none" }} />
           <div style={{ position: "absolute", top: 0, left: p.left, width: PW, height: 3, background: p.accentColor, opacity: fi(f, 20, 22) }} />
-          <div style={{ position: "absolute", left: p.left, top: 0, width: PW, height: 1080 }}>
-            <PanelText label={p.label} title={p.title} body={p.body} accentColor={p.accentColor} f={f} startF={22} />
-          </div>
         </React.Fragment>
       ))}
       <div style={{ position: "absolute", left: PW - 1, top: 0, width: 1, height: 1080, background: `${C.blue}35`, pointerEvents: "none" }} />
@@ -417,12 +355,14 @@ const Scene3Mass: React.FC = () => {
   const f = useCurrentFrame();
   return (
     <>
-      <DemoBG src={V.mass} overlayOpacity={0.28} />
+      <DemoBG src={V.mass} overlayOpacity={0.28} videoTop="72%" />
+      {/* Top gradient so text is readable above the video */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400, background: "linear-gradient(to bottom, rgba(0,0,0,0.90) 0%, transparent 100%)", pointerEvents: "none" }} />
       <Grid opacity={0.07} />
       <Scan opacity={0.13} />
       <MonoTag text="Our Work & Partners" f={f} startF={8} />
-      <H1 text="DBFmass" f={f} startF={20} top={370} fontSize={90} />
-      <BodyText text="The city's 3D spatial reasoning engine, encoding zoning constraints and density targets into buildable form at urban scale." f={f} startF={48} top={474} />
+      <H1 text="DBFmass" f={f} startF={20} top={120} fontSize={90} />
+      <BodyText text="The city's 3D spatial reasoning engine, encoding zoning constraints and density targets into buildable form at urban scale." f={f} startF={48} top={248} />
       <Logo />
       <SceneFade fadeInDur={16} fadeOutDur={16} />
     </>
@@ -434,11 +374,13 @@ const Scene3Plot: React.FC = () => {
   const partners = ["Emaar", "AECOM", "Dubai Municipality", "Singapore URA", "Neom"];
   return (
     <>
-      <DemoBG src={V.plot} overlayOpacity={0.28} />
+      <DemoBG src={V.plot} overlayOpacity={0.28} videoTop="72%" />
+      {/* Top gradient so text is readable above the video */}
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400, background: "linear-gradient(to bottom, rgba(0,0,0,0.90) 0%, transparent 100%)", pointerEvents: "none" }} />
       <Grid opacity={0.07} />
       <MonoTag text="Our Work & Partners" f={f} startF={8} />
-      <H1 text="DBFplot" f={f} startF={20} top={370} fontSize={90} />
-      <BodyText text="Site level intelligence layer. Each parcel knows its constraints, FAR targets and compliance pathways, building the city's ground truth memory." f={f} startF={48} top={474} />
+      <H1 text="DBFplot" f={f} startF={20} top={120} fontSize={90} />
+      <BodyText text="Site level intelligence layer. Each parcel knows its constraints, FAR targets and compliance pathways, building the city's ground truth memory." f={f} startF={48} top={248} />
       <div style={{ position: "absolute", bottom: 108, left: 120, display: "flex", alignItems: "center", gap: 32, opacity: fi(f, 62, 20) }}>
         <div style={{ fontFamily: mono, fontSize: 11, letterSpacing: "0.22em", color: C.muted, textTransform: "uppercase" }}>Partners</div>
         {partners.map((p, i) => (
@@ -545,12 +487,10 @@ const Scene5B: React.FC = () => {
 
 const Scene5C: React.FC = () => {
   const f = useCurrentFrame();
-  const isoProgress = clamp((f - 48) / 200, 0, 1);
   return (
     <>
       <LandscapeBG src={REF} startFrom={1500} overlayOpacity={0.52} />
-      <DTitle num="03 / SPATIAL MEMORY" title="Proximity Intelligence and Isochrone Analysis" f={f} startF={8} />
-      <IsoRings cx={960} cy={590} progress={isoProgress} />
+      <DTitle num="03 / SPATIAL MEMORY" title="Proximity Intelligence and Isochrone Analysis" f={f} startF={8} titleSize={34} />
       <BotLabel text="20 Minute City Scoring" f={f} startF={28} />
       <Logo />
       <SceneFade fadeInDur={16} fadeOutDur={16} />
@@ -564,7 +504,7 @@ const Scene5D: React.FC = () => {
     <>
       <LandscapeBG src={REF} startFrom={1950} overlayOpacity={0.46} />
       <Grid opacity={0.06} />
-      <DTitle num="04 / CITY INTERFACE" title="Real Time Urban Decision Interface" f={f} startF={8} />
+      <DTitle num="04 / CITY INTERFACE" title="Real Time Urban Decision Interface" f={f} startF={8} titleSize={38} />
       <BotLabel text="City Brain: Live Planning Interface" f={f} startF={28} />
       <Logo />
       <SceneFade fadeInDur={16} fadeOutDur={16} />
@@ -710,6 +650,36 @@ const Scene7Outro: React.FC = () => {
     </>
   );
 };
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GIF 1 — Scene5C clip  (absolute 2685–2978, 293 frames)
+// Crop region (gif frame-01.svg): outer x=539 y=177 w=1332 h=782 r=41
+// REF offset: Scene5C startFrom=1500 + local_start=132 → REF frame 1632
+// ═══════════════════════════════════════════════════════════════════════════════
+export const GIF1Video: React.FC = () => (
+  <AbsoluteFill style={{ overflow: "hidden", background: "#06080F" }}>
+    <div style={{ position: "absolute", left: -539, top: -177, width: 1920, height: 1080 }}>
+      <Sequence from={-1632}>
+        <OffthreadVideo src={REF} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      </Sequence>
+    </div>
+  </AbsoluteFill>
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// GIF 2 — Scene5D clip  (absolute 3153–3440, 287 frames)
+// Crop region (gif frame 2-01.svg): outer x=43 y=167 w=1332 h=782 r=41
+// REF offset: Scene5D startFrom=1950 + local_start=151 → REF frame 2101
+// ═══════════════════════════════════════════════════════════════════════════════
+export const GIF2Video: React.FC = () => (
+  <AbsoluteFill style={{ overflow: "hidden", background: "#06080F" }}>
+    <div style={{ position: "absolute", left: -43, top: -167, width: 1920, height: 1080 }}>
+      <Sequence from={-2101}>
+        <OffthreadVideo src={REF} muted style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+      </Sequence>
+    </div>
+  </AbsoluteFill>
+);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // ROOT
