@@ -75,14 +75,14 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{}}
       />
 
-      {/* DBF Onthology — Demo Video (1920×1080, ~1:52) */}
+      {/* DBF Onthology — Demo Video (1920×1080, ~3:36) */}
       <Composition
         id="dbf-onthology"
         component={DBFOnthologyVideo}
         fps={30}
         width={1920}
         height={1080}
-        durationInFrames={3361}
+        durationInFrames={6477}
         defaultProps={{}}
       />
 
