@@ -6,6 +6,8 @@ import { DBFWelcomeVideo } from "./components/DBFWelcomeVideo";
 import { DBFSydneyVideo, GIF1Video, GIF2Video } from "./components/DBFSydneyVideo";
 import { DBFOntologyVideo } from "./components/DBFOntologyVideo";
 import { DBFOnthologyVideo } from "./components/DBFOnthologyVideo";
+import { DBFOnthologyVideoV2 } from "./components/DBFOnthologyVideoV2";
+import { DBFOnthologyVideoV3, ONTHOLOGY_V3_TOTAL } from "./components/DBFOnthologyVideoV3";
 import { MiningVideo } from "./components/MiningVideo";
 import { ThesisVideo } from "./components/ThesisVideo";
 import { ThesisNewsNode } from "./components/ThesisNewsNode";
@@ -75,7 +77,29 @@ export const RemotionRoot: React.FC = () => {
         defaultProps={{}}
       />
 
-      {/* DBF Onthology — Demo Video (1920×1080, ~3:36) */}
+      {/* DBF Onthology — Speed-Ramp Cut (1920×1080, ~2:00) */}
+      <Composition
+        id="dbf-onthology-short"
+        component={DBFOnthologyVideoV2}
+        fps={30}
+        width={1920}
+        height={1080}
+        durationInFrames={3598}
+        defaultProps={{}}
+      />
+
+      {/* DBF Onthology — Shot-by-shot edit v3 (1280×720, ~78s) */}
+      <Composition
+        id="dbf-onthology-v3"
+        component={DBFOnthologyVideoV3}
+        fps={30}
+        width={1280}
+        height={720}
+        durationInFrames={ONTHOLOGY_V3_TOTAL}
+        defaultProps={{}}
+      />
+
+      {/* DBF Onthology — Full Demo Video (1920×1080, ~3:36) */}
       <Composition
         id="dbf-onthology"
         component={DBFOnthologyVideo}
